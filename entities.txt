@@ -1,0 +1,14 @@
+vendor
+vgstin
+customer
+cgstin
+invoiceno
+invoicedate
+itemname
+hsn
+quantity
+unit
+price
+amount
+taxableamt
+grandtotal
