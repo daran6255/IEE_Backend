@@ -13,14 +13,22 @@ def grayscale_conversion(image):
 
 # Function to apply noise reduction or removal (blur)
 def noise_reduction(image):
-    blurred_image = cv2.bilateralFilter(image, 15, 65, 65)
-    return blurred_image
+    # blurred_image = cv2.bilateralFilter(image, 15, 65, 65)
+    denoised_image = cv2.fastNlMeansDenoising(image, None, h=10, templateWindowSize=7, searchWindowSize=21)
+    return denoised_image
 
 # Function to enhance image contrast
 def enhance_contrast(image):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     equalized_image = clahe.apply(image)
     return equalized_image
+
+def sharpen_image(image):
+    kernel = np.array([[-1, -1, -1],
+                       [-1, 9, -1],
+                       [-1, -1, -1]])
+    sharpened_image = cv2.filter2D(image, -1, kernel)
+    return sharpened_image
 
 # Function to apply adaptive thresholding
 def global_thresholding(image):
@@ -29,8 +37,15 @@ def global_thresholding(image):
 
 # Function to apply adaptive thresholding
 def adaptive_thresholding(image):
-    thresholded_image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 21, 5)
-    return thresholded_image
+    thresholded_image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    return thresholded_image 
+
+def dilate_and_erode(image):
+    kernel = np.ones((1, 1), np.uint8)
+    img = cv2.dilate(image, kernel, iterations=1)
+    img = cv2.erode(img, kernel, iterations=1)
+    return img
+
 
 # Function for background subtraction
 # def background_subtraction(image):
@@ -75,16 +90,18 @@ for filename in os.listdir(input_folder):
     # Apply image processing steps
     processed_image = grayscale_conversion(image)
     # processed_image = noise_reduction(processed_image)
-    processed_image = enhance_contrast(processed_image)
+    # processed_image = enhance_contrast(processed_image)
+    # processed_image = sharpen_image(processed_image)
     
     # processed_image = global_thresholding(processed_image)
-    # processed_image = adaptive_thresholding(processed_image)
+    processed_image = adaptive_thresholding(processed_image)
+    processed_image = dilate_and_erode(processed_image)
     # processed_image = rotation_correction(processed_image)
     # processed_image = deskew_image(processed_image)
     # processed_image = background_subtraction(processed_image)
     # processed_image = enhance_text_edges(processed_image)
     # processed_image = color_space_transformation(processed_image)
-    processed_image = morphological_operations(processed_image)
+    # processed_image = morphological_operations(processed_image)
 
     # Save the processed image to the output folder
     output_path = os.path.join(output_folder, filename)
