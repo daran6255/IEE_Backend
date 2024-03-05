@@ -3,8 +3,8 @@ import re
 from datetime import datetime
 from dateutil import parser
 
-input_folder = r'C:\Users\WVF-DL-90\Desktop\Invoice_Entities_Extraction\data\dataset\invoice_ocr'
-output_folder = r'C:\Users\WVF-DL-90\Desktop\Invoice_Entities_Extraction\data\dataset\invoice_final'
+input_folder = r'C:\Users\WVF-DL-90\Desktop\Invoice_Entities_Extraction\data\dataset\jpg_testdata\testdata_invoice_extracted'
+output_folder = r'C:\Users\WVF-DL-90\Desktop\Invoice_Entities_Extraction\data\dataset\jpg_testdata\testdata_invoice_final'
 
 def text_clean(text):
     if isinstance(text, list):
