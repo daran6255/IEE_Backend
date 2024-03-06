@@ -4,6 +4,7 @@ import fitz
 import pytesseract
 import os
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+from PIL import Image
 
 class PDFExtractorApp(QWidget):
     def __init__(self):
@@ -34,6 +35,7 @@ class PDFExtractorApp(QWidget):
     def browse_pdf_files(self):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
+        options |= QFileDialog.DontUseNativeDialog 
         pdf_files, _ = QFileDialog.getOpenFileNames(self, "Select PDF Files", "", "PDF Files (*.pdf);;All Files (*)", options=options)
         if pdf_files:
             self.pdf_files = pdf_files
@@ -46,6 +48,7 @@ class PDFExtractorApp(QWidget):
         for index, pdf_file in enumerate(self.pdf_files, 1):
             extracted_text = ""
             try:
+                # if pdf_file is pdf:
                 doc = fitz.open(pdf_file)
                 for page in doc:
                     extracted_text += page.get_text()
@@ -53,6 +56,9 @@ class PDFExtractorApp(QWidget):
                 if selected_method == "PyMuPDF + PyTesseract":
 
                     extracted_text = pytesseract.image_to_string(extracted_text)
+                # elif pdf_file is jpg/jpeg:
+                    # custom_config = r'--oem 3 --psm 6'
+                    # extracted_text = pytesseract.image_to_string(Image.open(pdf_file), config=custom_config)
             except Exception as e:
                 print(f"Error processing {pdf_file}: {e}")
 

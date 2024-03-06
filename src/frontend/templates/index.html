@@ -21,16 +21,15 @@
         </div>
     </nav>
     <h1 style="margin-top: -10px;text-align: center;color: white;font-size:xx-large;">Invoice Entity Extractor</h1>
-    <div class="file-upload" style="margin-left: 350px;margin-top: -10px;">
+    <div class="file-upload" style="margin-left: 180px;margin-top: -10px;">
       <form action="/process_invoice" method="post" enctype="multipart/form-data">
         <label for="fileInput">Browse File</label>
-        <input type="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
-        <button type="submit">upload</button>
+        <input type="file" name="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
+        <button class="button" type="submit">upload</button>
+        <a href="/process_invoice" class="button" style="margin-left: 140px;">Extract</a>
+        <a href="/download_excel" class="button" style="margin-left: 130px;">Download Excel</a>
+        <a href="/download_json" class="button">Download Json</a>
       </form>
-      
-      <a href="/process_invoice" class="button">Extract</a>
-      <a href="/download_excel" class="button">Download Excel</a>
-      <a href="/download_json" class="button">Download Json</a>
     </div>
     
     

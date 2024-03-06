@@ -1,20 +1,22 @@
-from random import random
+import random
+import string
 from flask import Flask, jsonify, render_template, request, send_file
+import os
 import json
 import pandas as pd
-import os
-
 from iee_pipeline import IEEPipeline
 
-# template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-app = Flask(__name__, static_folder='frontend/static', template_folder='frontend/templates')
 
-iee_pipeline = IEEPipeline()
+# template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+app = Flask(__name__, static_folder='frontend/static', template_folder='frontend/templates')
+# iee_pipeline = IEEPipeline()
+
 
 TEMP_DIR = 'temp'
 if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
-    
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -53,15 +55,20 @@ def process_invoice():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'})
     file = request.files['file']
-    file_path = os.path.join(TEMP_DIR, 'temp_file_' + random())
-    file.save(file_path)
-    
-    pp_output = iee_pipeline.image_preprocessing(file_path)
-    ocr_output = iee_pipeline.extract_text(pp_output)
-    txt_pp_ouput = iee_pipeline.text_preprocessing(ocr_output)
-    entities_extracted = iee_pipeline.extract_entities(txt_pp_ouput)
-    
-    return jsonify(entities_extracted)
-    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'})
+    if file:
+        random_filename = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        file_ext = os.path.splitext(file.filename)[1]
+        filename = random_filename + file_ext
+        file_path = os.path.join(TEMP_DIR, filename)
+        file.save(file_path)
+        # pp_output = iee_pipeline.image_preprocessing(file_path)
+        # ocr_output = iee_pipeline.extract_text(pp_output)
+        # txt_pp_ouput = iee_pipeline.text_preprocessing(ocr_output)
+        # entities_extracted = iee_pipeline.extract_entities(txt_pp_ouput)
+
+        return jsonify({'success': 'File uploaded successfully'})
+
 if __name__ == '__main__':
     app.run(debug=True)
