@@ -63,12 +63,13 @@ def process_invoice():
         filename = random_filename + file_ext
         file_path = os.path.join(TEMP_DIR, filename)
         file.save(file_path)
-        # pp_output = iee_pipeline.image_preprocessing(file_path)
-        # ocr_output = iee_pipeline.extract_text(pp_output)
-        # txt_pp_ouput = iee_pipeline.text_preprocessing(ocr_output)
-        # entities_extracted = iee_pipeline.extract_entities(txt_pp_ouput)
+        
+        pp_output_path = iee_pipeline.image_preprocessing(file_path)
+        ocr_output = iee_pipeline.extract_text(pp_output_path)
+        pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
+        entities_extracted = iee_pipeline.extract_entities(pp_txt_ouput)
 
-        return jsonify({'success': 'File uploaded successfully'})
+        return jsonify(entities_extracted)
 
 if __name__ == '__main__':
     app.run(debug=True)
