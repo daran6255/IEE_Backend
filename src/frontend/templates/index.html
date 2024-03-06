@@ -25,8 +25,7 @@
       <form action="/process_invoice" method="post" enctype="multipart/form-data">
         <label for="fileInput">Browse File</label>
         <input type="file" name="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
-        <button class="button" type="submit">upload</button>
-        <a href="/process_invoice" class="button" style="margin-left: 140px;">Extract</a>
+        <button class="button" type="submit">Process</button>
         <a href="/download_excel" class="button" style="margin-left: 130px;">Download Excel</a>
         <a href="/download_json" class="button">Download Json</a>
       </form>
@@ -41,12 +40,30 @@
       <div class="right-column">
         
         <div class="row">
-          <div class="column empty-box">
-              <!-- Empty box for the first row of the second column -->
+          <div class="column empty-box" id="invoiceData">
           </div>
         </div>
       </div>
   </div>
-    <script src="static/script.js"></script>
+
+  <script>
+    document.querySelector('form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('file', document.getElementById('fileInput').files[0]);
+
+        const response = await fetch('/process_invoice', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        const invoiceDataDiv = document.getElementById('invoiceData');
+        invoiceDataDiv.innerHTML = `<h2>Extracted Entities</h2><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    });
+  </script>
+
+  <script src="static/script.js"></script>
 </body>
 </html>
