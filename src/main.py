@@ -10,8 +10,8 @@ from iee_pipeline import IEEPipeline
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 app = Flask(__name__, static_folder='frontend/static', template_folder='frontend/templates')
-# iee_pipeline = IEEPipeline()
 
+iee_pipeline = IEEPipeline()
 
 TEMP_DIR = 'temp'
 if not os.path.exists(TEMP_DIR):
@@ -61,15 +61,19 @@ def process_invoice():
         random_filename = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         file_ext = os.path.splitext(file.filename)[1]
         filename = random_filename + file_ext
-        file_path = os.path.join(TEMP_DIR, filename)
-        file.save(file_path)
+        filepath = os.path.join(TEMP_DIR, filename)
+        input_file = os.path.abspath(filepath)
+        file.save(input_file)
         
-        pp_output_path = iee_pipeline.image_preprocessing(file_path)
-        ocr_output = iee_pipeline.extract_text(pp_output_path)
-        pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
-        entities_extracted = iee_pipeline.extract_entities(pp_txt_ouput)
+        if file_ext == ".jpg" or file_ext == ".jpeg": 
+            pp_output_path = iee_pipeline.image_preprocessing(input_file)
+            # ocr_output = iee_pipeline.extract_text(pp_output_path)
+            # pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
+            # entities_extracted = iee_pipeline.extract_entities(pp_txt_ouput)
 
-        return jsonify(entities_extracted)
+            return jsonify({'path': pp_output_path})
+        
+        return jsonify({'Error': 'Invoice Format Not Supported'})
 
 if __name__ == '__main__':
     app.run(debug=True)

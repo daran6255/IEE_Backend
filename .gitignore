@@ -4,5 +4,7 @@ data/dataset/img_correction_final
 data/dataset/img_correction
 # data/dataset/annotations
 
-.vscode
 models/
+temp
+src/__pycache__
+src/.ipynb_checkpoints
