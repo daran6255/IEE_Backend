@@ -67,11 +67,11 @@ def process_invoice():
         
         if file_ext == ".jpg" or file_ext == ".jpeg": 
             pp_output_path = iee_pipeline.image_preprocessing(input_file)
-            # ocr_output = iee_pipeline.extract_text(pp_output_path)
-            # pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
-            # entities_extracted = iee_pipeline.extract_entities(pp_txt_ouput)
+            ocr_output = iee_pipeline.extract_text(pp_output_path)
+            pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
+            entities_extracted = iee_pipeline.extract_entities(pp_txt_ouput)
 
-            return jsonify({'path': pp_output_path})
+            return jsonify(entities_extracted)
         
         return jsonify({'Error': 'Invoice Format Not Supported'})
 
