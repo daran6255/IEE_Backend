@@ -2,10 +2,15 @@ import os
 import cv2
 
 from image_enhancer import ImageEnhancer
+from entity_extractor import extractEntities
+from text_preprocessor import TextPreprocessor
 
 
 class IEEPipeline:
     imageEnhancer = ImageEnhancer()
+    text_preprocessor = TextPreprocessor()
+    entity_extractor = extractEntities()
+    
     
     def __init__(self):
         pass
@@ -30,9 +35,14 @@ class IEEPipeline:
         return extracted_text
     
     def text_preprocessing(self, text):
-        
-        pass
-    
+        cleaned_text = self.text_preprocessor.text_clean(text)
+        tokens = self.text_preprocessor.text_tokenizer(cleaned_text)
+        normalized_tokens = self.text_preprocessor.text_normalization(tokens)
+        standardized_tokens = self.text_preprocessor.date_standardization(normalized_tokens)
+        return standardized_tokens
+
     def extract_entities(self, text):
-        
-        return {"invioce_no": 1233}
+        json_data = self.entity_extractor.extract_entities_spacy_sm(text)
+        json_data = self.entity_extractor.extract_entities_spacy_lg(text)
+        json_data = self.entity_extractor.extract_entities_spacy_tr(text)
+        return json_data
