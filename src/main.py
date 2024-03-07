@@ -6,8 +6,9 @@ import json
 import pandas as pd
 from iee_pipeline import IEEPipeline
 
-
+entities_extracted = {}
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
 
 app = Flask(__name__, static_folder='frontend/static', template_folder='frontend/templates')
 
@@ -23,10 +24,7 @@ def index():
 
 @app.route('/download_excel')
 def download_excel():
-    # Create sample Excel data (you can replace this with your data)
-    data = {'Name': ['John', 'Anna', 'Peter', 'Linda'],
-            'Age': [28, 35, 42, 25],
-            'City': ['New York', 'Paris', 'Berlin', 'London']}
+    data = entities_extracted
     df = pd.DataFrame(data)
 
     # Save DataFrame to Excel file
@@ -37,21 +35,22 @@ def download_excel():
 
 @app.route('/download_json')
 def download_json():
-    # Create sample JSON data (you can replace this with your data)
-    data = {'Name': ['John', 'Anna', 'Peter', 'Linda'],
-            'Age': [28, 35, 42, 25],
-            'City': ['New York', 'Paris', 'Berlin', 'London']}
-    json_data = json.dumps(data)
-
-    # Save JSON data to file
-    json_file = 'data.json'
-    with open(json_file, 'w') as file:
-        file.write(json_data)
-
-    return send_file(json_file, as_attachment=True)
+      
+    global entities_extracted
+    if not entities_extracted:
+        return jsonify({'error': 'No data to download'})
+    output_directory = r'c:\Users\WVF-DL-90\Desktop\Invoice_Entities_Extraction\src\json_files'
+    json_file_path = 'extracted_entities.json'
+    json_file_path = os.path.join(output_directory, 'extracted_entities.json')
+    
+    with open(json_file_path, 'w') as f:
+        json.dump(entities_extracted, f)
+        
+    return send_file(json_file_path, as_attachment=True)
 
 @app.route('/process_invoice', methods=['POST'])
 def process_invoice():
+    global entities_extracted
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'})
     file = request.files['file']
