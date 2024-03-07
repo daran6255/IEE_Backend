@@ -1,5 +1,5 @@
 import spacy
-import json
+from collections import defaultdict
 
 class extractEntities:
     spacy_sm = None
@@ -27,5 +27,11 @@ class extractEntities:
     
     def extract_entities_spacy_tr(self, input_text):
         doc = self.spacy_tr(input_text)
-        entities = {ent.label_: ent.text for ent in doc.ents}
+        
+        entity_dict = defaultdict(list)
+
+        for ent in doc.ents:
+            entity_dict[ent.label_].append(ent.text)
+
+        entities = dict(entity_dict)
         return entities
