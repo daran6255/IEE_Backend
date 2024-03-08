@@ -1,69 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entity Extraction</title>
-    <link rel="stylesheet" href="static/style.css">
-    <script>
-      
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entity Extractor</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <img src="static/img/WVI.png" alt="Logo">
-        </div>
-        <div class="menu-btn">
-            <!-- <button>Menu</button>
-            <a href="/download_excel" class="button">Download Excel</a>
-            <a href="/download_json" class="button">Download Json</a> -->
-        </div>
-    </nav>
-    <h1 style="margin-top: -10px;text-align: center;color: white;font-size:xx-large;">Invoice Entity Extractor</h1>
-    <div class="file-upload" style="margin-left: 180px;margin-top: -10px;">
-      <form action="/process_invoice" method="post" enctype="multipart/form-data">
-        <label for="fileInput">Browse File</label>
-        <input type="file" name="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
-        <button class="button" type="submit">Process</button>
-        <a href="/download_excel" class="button" style="margin-left: 130px;">Download Excel</a>
-        <a href="/download_json" class="button">Download Json</a>
-      </form>
+
+  <!-- Page Loader -->
+  <div class="loader-wrapper" id="loader">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="www.winvinaya.com"><img src="/static/WVI.png" alt="Logo" height="40"></a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#">Contact Us</a>
+        </li>
+      </ul>
     </div>
-    
-    
-    <div class="container">  
-      <div class="left-column">
-          <div id="imagePreview"></div>
-          <button id="closeImageBtn" style="display: none;">Close Image</button>
-      </div>
-      <div class="right-column">
-        
-        <div class="row">
-          <div class="column empty-box" id="invoiceData" style="color: rgb(3, 3, 3);">
+  </nav>
+
+  <!-- Heading -->
+  <div class="text-center mt-4">
+    <h1 class="text-white">Entity Extractor</h1>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mt-5 glass-bg">
+    <div class="row">
+      <!-- First Row -->
+      <div class="col-md-4 mb-3">
+        <div class="input-group">
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" name="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
+            <label class="custom-file-label" for="fileInput">Choose file</label>
           </div>
         </div>
       </div>
+      <div class="col-md-4 mb-3">
+        <button id="processBtn" class="btn btn-primary btn-block">Process</button>
+        <div class="progress mt-3" id="progressContainer" style="height: 15px; display: none; margin-top: 20px;">
+          <div class="progress">
+            <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
+          </div>
+          <div class="progress-text" id="progressText"></div>
+        </div>
+        <div id="successMessage" class="alert alert-success mt-3" role="alert" style="display: none;">
+          Successfully extracted!
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <a href="/download_excel" class="button">
+          <button class="btn btn-success btn-block" >Download Excel</button>
+        </a>
+        <a href="/download_json" class="button">
+          <button class="btn btn-info btn-block mt-2">Download JSON</button>
+        </a>
+        
+      </div>
+
+      <!-- Second Row -->
+      <div class="col-md-6">
+        <h3 class="text-white">File Preview</h3>
+        <div id="imagePreview" class="border p-3 bg-white text-dark dotted-border">No file selected</div>
+      </div>
+      <div class="col-md-6">
+        <h3 class="text-white">Extracted Data</h3>
+        <div class="border p-3 bg-white text-dark dotted-border" id="invoiceData">Extracted Data Area</div>
+      </div>
+    </div>
   </div>
 
-  <script>
-    document.querySelector('form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        
-        const formData = new FormData();
-        formData.append('file', document.getElementById('fileInput').files[0]);
+  <!-- Footer -->
+  <footer class="bg-dark text-light text-center py-3 mt-5 footer" >
+    <p>&copy; 2024 <a href="www.winvinaya.com">WinVinaya InfoSystems</a>. All rights reserved.</p>
+  </footer>
 
-        const response = await fetch('/process_invoice', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        const invoiceDataDiv = document.getElementById('invoiceData');
-        invoiceDataDiv.innerHTML = `<h2>Extracted Entities</h2><pre>${JSON.stringify(data, null, 2)}</pre>`;
-    });
+  <script>
+    // Hide loader after 30 seconds
+setTimeout(() => {
+  document.getElementById('loader').style.display = 'none';
+}, 3000);
+
+document.getElementById('fileInput').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('imagePreview').innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Preview">`;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('processBtn').addEventListener('click', async function() {
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  progressBar.style.width = '0%'; // Reset progress bar width
+  progressText.innerText = '0%'; // Reset progress text
+  document.getElementById('progressContainer').style.display = 'block'; // Show progress container
+  document.getElementById('successMessage').style.display = 'none'; // Hide success message
+
+let progress = 0;
+  const interval = setInterval(function() {
+    if (progress >= 100) {
+      clearInterval(interval);
+      // document.getElementById('successMessage').style.display = 'block';
+      // return;
+      successMessage.style.display = 'block'; // Show success message
+      setTimeout(() => {
+        successMessage.style.display = 'none'; // Hide success message after 5 seconds
+      }, 5000); // Hide after 5 seconds
+      return;
+    }
+    progressBar.style.width = `${progress}%`;
+    progressText.innerText = `${progress}%`; // Update progress text
+    progress += 5; // Increase progress by 5% every 100 milliseconds (adjust as needed)
+  }, 100)
+
+  const formData = new FormData();
+  formData.append('file', document.getElementById('fileInput').files[0]);
+
+  const response = await fetch('/process_invoice', {
+    method: 'POST',
+    body: formData
+  });
+  
+  const data = await response.json();
+  const invoiceDataDiv = document.getElementById('invoiceData');
+  invoiceDataDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+  clearInterval(interval); // Stop the progress interval
+  progressBar.style.width = '100%'; // Set progress bar to 100% after processing
+  progressText.innerText = '100%'; // Update progress text
+  setTimeout(() => {
+    document.getElementById('progressContainer').style.display = 'none'; // Hide progress container after processing
+  }, 1000);
+});
   </script>
 
-  <script src="static/script.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

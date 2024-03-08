@@ -1,126 +1,135 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  
-  /* background: url("https://4kwallpapers.com/images/wallpapers/macos-big-sur-apple-layers-fluidic-colorful-dark-wwdc-2020-3840x2160-1432.jpg"); */
-  background-size: cover;
-  background-attachment: fixed;
+  /* background: linear-gradient(135deg, #ff9a9e, #fad0c4); */
+  /* background: #24C6DC;  
+  background: -webkit-linear-gradient(to right, #514A9D, #24C6DC); 
+  background: linear-gradient(to right, #514A9D, #24C6DC); */
+  background: linear-gradient(to bottom, #323232 0%, #3F3F3F 40%, #1C1C1C 150%), linear-gradient(to top, rgba(255,255,255,0.40) 0%, rgba(0,0,0,0.25) 200%);
+  background-blend-mode: multiply;
 }
 
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: transparent;
-  padding: 10px 20px;
-  color: white;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
 }
 
-.logo img {
-  width: 220px;
-  height: 40px;
-}
-
-.menu-btn button,
-.file-upload label,
-.button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-  margin: 4px 2px;
-}
-
-.container {
-  display: flex;
+.glass-bg {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
   padding: 20px;
-  gap: 20px; /* Add gap between columns */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.right-column {
-  flex: 1;
-  padding: 10px;
-  background-color: transparent;
-  border: 1px solid #ccc;
-  display: flex; /* Add display flex to align items */
-  align-items: center; /* Center items vertically */
-  justify-content: center; /* Center items horizontally */
-}
-.left-column {
-  flex: 1;
-  padding: 10px;
-  background-color: transparent;
-  border: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  backdrop-filter: blur(30px);
-  justify-content: center;
-  position: relative; /* Add position relative for image positioning */
-}
-#imagePreview {
-  max-width: 100%; /* Ensure image doesn't exceed the column width */
-  max-height: 100%; /* Ensure image doesn't exceed the column height */
-}
-
-.preview-image {
-  max-width: 100%; /* Ensure image fits within the container */
-  max-height: 100%; /* Ensure image fits within the container */
-  object-fit: contain; /* Maintain aspect ratio of the image */
-}
-.file-upload input[type=file] {
-  display: none;
-}
-
-.file-upload label {
-  background-color: #4CAF50;
+.footer {
+  background: rgba(0, 0, 0, 0.7);
   color: white;
-  border: none;
-  padding: 10px 20px;
+}
+
+.dotted-border {
+  border: 2px dotted #000000 !important;
+  padding: 10px;
+}
+
+.progress-bar {
+  position: relative;
+}
+
+.progress-text {
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
   text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-  margin: 0; /* Remove margin for label */
+  transform: translateY(-50%);
 }
 
-.empty-box {
-  /* Add borders to empty box */
-  border: 1px solid #ccc;
-  flex: 1;
-  height: 410px;
-  width: 600px;
+/* Loader Styles */
+.loader-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(30px);
-}
-
-.button {
-  /* padding: 10px 20px; */
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.row {
+  z-index: 9999;
   display: flex;
-  margin-bottom: 20px;
+  justify-content: center;
+  align-items: center;
 }
 
-.column {
-  flex: 1;
-  padding: 0 10px;
+.loader {
+  position: relative;
+  width: 2.5em;
+  height: 2.5em;
+  transform: rotate(165deg);
 }
 
-.buttons {
-  margin-top: 20px;
-  justify-content: flex-end;
+.loader:before, .loader:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 0.25em;
+  transform: translate(-50%, -50%);
+}
+
+.loader:before {
+  animation: before8 2s infinite;
+}
+
+.loader:after {
+  animation: after6 2s infinite;
+}
+
+@keyframes before8 {
+  0% {
+    width: 0.5em;
+    box-shadow: 1em -0.5em rgba(225, 20, 98, 0.75), -1em 0.5em rgba(111, 202, 220, 0.75);
+  }
+
+  35% {
+    width: 2.5em;
+    box-shadow: 0 -0.5em rgba(225, 20, 98, 0.75), 0 0.5em rgba(111, 202, 220, 0.75);
+  }
+
+  70% {
+    width: 0.5em;
+    box-shadow: -1em -0.5em rgba(225, 20, 98, 0.75), 1em 0.5em rgba(111, 202, 220, 0.75);
+  }
+
+  100% {
+    box-shadow: 1em -0.5em rgba(225, 20, 98, 0.75), -1em 0.5em rgba(111, 202, 220, 0.75);
+  }
+}
+
+@keyframes after6 {
+  0% {
+    height: 0.5em;
+    box-shadow: 0.5em 1em rgba(61, 184, 143, 0.75), -0.5em -1em rgba(233, 169, 32, 0.75);
+  }
+
+  35% {
+    height: 2.5em;
+    box-shadow: 0.5em 0 rgba(61, 184, 143, 0.75), -0.5em 0 rgba(233, 169, 32, 0.75);
+  }
+
+  70% {
+    height: 0.5em;
+    box-shadow: 0.5em -1em rgba(61, 184, 143, 0.75), -0.5em 1em rgba(233, 169, 32, 0.75);
+  }
+
+  100% {
+    box-shadow: 0.5em 1em rgba(61, 184, 143, 0.75), -0.5em -1em rgba(233, 169, 32, 0.75);
+  }
+}
+
+.loader {
+  position: absolute;
+  top: calc(50% - 1.25em);
+  left: calc(50% - 1.25em);
 }
