@@ -82,7 +82,8 @@ def process_invoice():
                 if entities_output:
                     entities_extracted.append({'filename': file.filename, 'enitites': entities_output})
             
-            return jsonify({'Error': 'Invoice Format Not Supported'})
+            else:
+             continue
        
     if entities_extracted:
         requestId = uuid.uuid4()
