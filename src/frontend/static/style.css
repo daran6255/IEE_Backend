@@ -1,19 +1,16 @@
 body {
-  /* background: linear-gradient(135deg, #ff9a9e, #fad0c4); */
-  /* background: #24C6DC;  
-  background: -webkit-linear-gradient(to right, #514A9D, #24C6DC); 
-  background: linear-gradient(to right, #514A9D, #24C6DC); */
-  background: linear-gradient(to bottom, #323232 0%, #3F3F3F 40%, #1C1C1C 150%), linear-gradient(to top, rgba(255,255,255,0.40) 0%, rgba(0,0,0,0.25) 200%);
+  background: white;
   background-blend-mode: multiply;
 }
 
 .navbar {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(5px);
+  /* background: rgba(255, 255, 255, 0.5); */
+  background-color: white !important;
+  /* backdrop-filter: blur(5px); */
 }
 
 .glass-bg {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(219, 219, 219, 0.3);
   backdrop-filter: blur(10px);
   border-radius: 15px;
   padding: 20px;
@@ -132,4 +129,7 @@ body {
   position: absolute;
   top: calc(50% - 1.25em);
   left: calc(50% - 1.25em);
+}
+#heading-color {
+  color: black !important; /* Add !important to ensure this style takes precedence */
 }

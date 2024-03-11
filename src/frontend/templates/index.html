@@ -20,7 +20,16 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav ml-auto">
         <li class="nav-item">
-          <a class="nav-link" href="#">Contact Us</a>
+          <a class="nav-link" href="#" style="color: black !important;">Services</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" style="color: black !important;">About Us</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" style="color: black !important;">Contact Us</a>
+        </li>
+        <li class="nav-item">
+          <button type="button" class="btn btn-outline-success">Request Demo</button>
         </li>
       </ul>
     </div>
@@ -28,7 +37,7 @@
 
   <!-- Heading -->
   <div class="text-center mt-4">
-    <h1 class="text-white">Entity Extractor</h1>
+    <h1 class="text-white" id="heading-color">Entity Extractor</h1>
   </div>
 
   <!-- Main Content -->
@@ -49,7 +58,7 @@
           <div class="progress">
             <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
           </div>
-          <div class="progress-text" id="progressText"></div>
+          <div class="progress-text" id="progressText" style="color: black !important;"></div>
         </div>
         <div id="successMessage" class="alert alert-success mt-3" role="alert" style="display: none;">
           Successfully extracted!
@@ -67,11 +76,11 @@
 
       <!-- Second Row -->
       <div class="col-md-6">
-        <h3 class="text-white">File Preview</h3>
+        <h3 class="text-white" id="heading-color">File Preview</h3>
         <div id="imagePreview" class="border p-3 bg-white text-dark dotted-border">No file selected</div>
       </div>
       <div class="col-md-6">
-        <h3 class="text-white">Extracted Data</h3>
+        <h3 class="text-white" id="heading-color">Extracted Data</h3>
         <div class="border p-3 bg-white text-dark dotted-border" id="invoiceData">Extracted Data Area</div>
       </div>
     </div>
