@@ -9,3 +9,4 @@ temp
 src/__pycache__
 src/.ipynb_checkpoints
 src/json_files
+output
