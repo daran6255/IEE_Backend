@@ -11,7 +11,14 @@
 
   <!-- Page Loader -->
   <div class="loader-wrapper" id="loader">
-    <div class="loader"></div>
+    <div class="loader">
+      <svg class="pl" width="240" height="240" viewBox="0 0 240 240">
+        <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"></circle>
+        <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"></circle>
+      </svg>
+    </div>
   </div>
 
   <!-- Navigation Bar -->
@@ -47,13 +54,17 @@
       <div class="col-md-4 mb-3">
         <div class="input-group">
           <div class="custom-file">
-            <input type="file" class="custom-file-input" name="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
-            <label class="custom-file-label" for="fileInput">Choose file</label>
+            <form method="POST" enctype="multipart/form-data" action="/process_invoice">
+             <input type="file" class="custom-file-input" name="file" id="fileInput" accept=".jpg, .jpeg" multiple>
+              <label class="custom-file-label" for="fileInput">Choose file</label>
           </div>
         </div>
+        <div id="selectedImagesCount"></div>       
       </div>
+
       <div class="col-md-4 mb-3">
-        <button id="processBtn" class="btn btn-primary btn-block">Process</button>
+          <button type="submit" id="processBtn" class="btn btn-primary btn-block">Process</button>
+          </form> 
         <div class="progress mt-3" id="progressContainer" style="height: 15px; display: none; margin-top: 20px;">
           <div class="progress">
             <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
@@ -64,6 +75,7 @@
           Successfully extracted!
         </div>
       </div>
+
       <div class="col-md-4 mb-3">
         <a href="/download_excel" class="button">
           <button class="btn btn-success btn-block" >Download Excel</button>
@@ -71,13 +83,22 @@
         <a href="/download_json" class="button">
           <button class="btn btn-info btn-block mt-2">Download JSON</button>
         </a>
-        
       </div>
 
       <!-- Second Row -->
       <div class="col-md-6">
         <h3 class="text-white" id="heading-color">File Preview</h3>
-        <div id="imagePreview" class="border p-3 bg-white text-dark dotted-border">No file selected</div>
+        <div id="imagePreviewCarousel" class="border p-3 bg-white text-dark dotted-border carousel slide" data-ride="carousel" data-interval="false">
+          <div class="carousel-inner"></div>
+          <a class="carousel-control-prev" href="#imagePreviewCarousel" role="button" data-slide="prev" >
+            <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: black !important;"></span>
+            <span class="sr-only">Previous</span>
+          </a>
+          <a class="carousel-control-next" href="#imagePreviewCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: black !important;"></span>
+            <span class="sr-only">Next</span>
+          </a>
+        </div>
       </div>
       <div class="col-md-6">
         <h3 class="text-white" id="heading-color">Extracted Data</h3>
@@ -92,43 +113,83 @@
   </footer>
 
   <script>
-    // Hide loader after 30 seconds
+
+// Hide loader after 30 seconds
 setTimeout(() => {
   document.getElementById('loader').style.display = 'none';
 }, 3000);
 
 document.getElementById('fileInput').addEventListener('change', function(event) {
-  const file = event.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    document.getElementById('imagePreview').innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Preview">`;
-  };
-  reader.readAsDataURL(file);
+  const files = event.target.files;
+  const selectedImagesCount = document.getElementById('selectedImagesCount');
+  selectedImagesCount.textContent = files.length + ' image(s) selected';
+});
+
+document.getElementById('fileInput').addEventListener('change', function(event) {
+  const files = event.target.files;
+  const imagePreviewCarousel = document.getElementById('imagePreviewCarousel');
+  const carouselInner = imagePreviewCarousel.querySelector('.carousel-inner');
+  const carouselControls = imagePreviewCarousel.querySelectorAll('.carousel-control');
+
+  carouselInner.innerHTML = '';
+
+  if (files.length <= 1) {
+    carouselControls.forEach(control => {
+      control.style.display = 'none';
+    });
+  } else {
+    carouselControls.forEach(control => {
+      control.style.display = 'block';
+    });
+  }
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+      const carouselItem = document.createElement('div');
+      carouselItem.classList.add('carousel-item');
+
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.classList.add('d-block', 'w-100');
+
+      carouselItem.appendChild(img);
+
+      if (i === 0) {
+        carouselItem.classList.add('active');
+      }
+
+      carouselInner.appendChild(carouselItem);
+    };
+
+    reader.readAsDataURL(file);
+  }
 });
 
 document.getElementById('processBtn').addEventListener('click', async function() {
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
-  progressBar.style.width = '0%'; // Reset progress bar width
-  progressText.innerText = '0%'; // Reset progress text
-  document.getElementById('progressContainer').style.display = 'block'; // Show progress container
-  document.getElementById('successMessage').style.display = 'none'; // Hide success message
+  progressBar.style.width = '0%';
+  progressText.innerText = '0%';
+  document.getElementById('progressContainer').style.display = 'block';
+  document.getElementById('successMessage').style.display = 'none';
 
 let progress = 0;
   const interval = setInterval(function() {
     if (progress >= 100) {
       clearInterval(interval);
-      // document.getElementById('successMessage').style.display = 'block';
-      // return;
-      successMessage.style.display = 'block'; // Show success message
+      successMessage.style.display = 'block';
       setTimeout(() => {
-        successMessage.style.display = 'none'; // Hide success message after 5 seconds
-      }, 5000); // Hide after 5 seconds
+        successMessage.style.display = 'none';
+      }, 5000);
       return;
     }
     progressBar.style.width = `${progress}%`;
-    progressText.innerText = `${progress}%`; // Update progress text
-    progress += 5; // Increase progress by 5% every 100 milliseconds (adjust as needed)
+    progressText.innerText = `${progress}%`;
+    progress += 5;
   }, 100)
 
   const formData = new FormData();
@@ -140,14 +201,20 @@ let progress = 0;
   });
   
   const data = await response.json();
+  const requestId = responseData.requestId; // Extracting requestId from the response JSON directly
+
+  console.log('Request ID:', requestId); // Log the requestId to the console
+
+  const result = responseData.result;
+
   const invoiceDataDiv = document.getElementById('invoiceData');
   invoiceDataDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
-  clearInterval(interval); // Stop the progress interval
-  progressBar.style.width = '100%'; // Set progress bar to 100% after processing
-  progressText.innerText = '100%'; // Update progress text
+  clearInterval(interval);
+  progressBar.style.width = '100%';
+  progressText.innerText = '100%';
   setTimeout(() => {
-    document.getElementById('progressContainer').style.display = 'none'; // Hide progress container after processing
+    document.getElementById('progressContainer').style.display = 'none';
   }, 1000);
 });
   </script>

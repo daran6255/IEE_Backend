@@ -38,7 +38,7 @@ def download_excel(requestId):
 
         return send_file(excel_file, as_attachment=True)
     
-    return jsonify({'Error': 'Request has expired'})    
+    return jsonify({'Error': 'Request has expired'})
 
 @app.route('/download_json/<requestId>', methods=['GET'])
 def download_json(requestId):
@@ -49,7 +49,7 @@ def download_json(requestId):
         json.dump(data, mem)
         mem.seek(0)
             
-        return send_file(mem, attachment_filename=requestId + '_entities.json', as_attachment=True)
+        return send_file(mem, attachment_filename = requestId + '_entities.json', as_attachment=True)
 
     return jsonify({'Error': 'Request has expired'})  
 
@@ -58,7 +58,7 @@ def process_invoice():
     if 'files' not in request.files:
         return jsonify({'Error': 'No file provided'})
     
-    files = request.files.getlist['files']
+    files = request.files.getlist('files')
     entities_extracted = []
     
     for file in files:
