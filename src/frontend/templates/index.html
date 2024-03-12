@@ -82,9 +82,7 @@
         <a href="/download_excel" class="button">
           <button class="btn btn-success btn-block" >Download Excel</button>
         </a>
-        <a href="/download_json" class="button">
-          <button class="btn btn-info btn-block mt-2">Download JSON</button>
-        </a>
+        <button class="btn btn-info btn-block mt-2" onclick="downloadJson()">Download JSON</button>
       </div>
 
       <!-- Second Row -->
@@ -115,6 +113,8 @@
   </footer>
 
   <script>
+
+  var lastRequestId = ""
 
   // Hide loader after 1 seconds
   setTimeout(() => {
@@ -211,6 +211,7 @@
         });
 
         const responseData = await response.json();
+        lastRequestId = responseData.requestId;
         const result = responseData.result;
         const invoiceDataDiv = document.getElementById('invoiceData');
 
@@ -226,6 +227,26 @@
         document.getElementById('progressContainer').style.display = 'none';
       }, 1000);
   });
+
+  async function downloadJson() {
+    try {
+        console.log(lastRequestId);
+        const response = await fetch('/download_json/' + lastRequestId);
+        if (!response.ok) {
+            throw new Error("HTTP error " + response.status);
+        }
+        const data = await response.blob();
+        const url = window.URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', lastRequestId + '_extracted.json');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+  }
   </script>
 
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

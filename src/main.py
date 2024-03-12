@@ -27,7 +27,7 @@ def index():
 
 @app.route('/download_excel/<requestId>', methods=['GET'])
 def download_excel(requestId):
-    data = request_queue[requestId]
+    data = request_queue.get(requestId)
     
     if data:
         df = pd.DataFrame(data)
@@ -36,20 +36,20 @@ def download_excel(requestId):
         excel_file = 'data.xlsx'
         df.to_excel(excel_file, index=False)
 
-        return send_file(excel_file, as_attachment=True)
+        return send_file(excel_file, as_attachment=True)    
     
     return jsonify({'Error': 'Request has expired'})
 
 @app.route('/download_json/<requestId>', methods=['GET'])
 def download_json(requestId):
-    data = request_queue[requestId]
+    data = request_queue.get(requestId)
     
     if data:
         mem = io.BytesIO()
-        json.dump(data, mem)
+        json_data = json.dumps(data)
+        mem.write(json_data.encode())
         mem.seek(0)
-            
-        return send_file(mem, attachment_filename = requestId + '_entities.json', as_attachment=True)
+        return send_file(mem, download_name='entities.json', as_attachment=True)
 
     return jsonify({'Error': 'Request has expired'})  
 
@@ -86,7 +86,7 @@ def process_invoice():
              continue
        
     if entities_extracted:
-        requestId = uuid.uuid4()
+        requestId = str(uuid.uuid4())
         request_queue[requestId] = entities_extracted
         
         return jsonify({'requestId': requestId, 'result': entities_extracted})
