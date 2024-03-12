@@ -55,12 +55,12 @@ def download_json(requestId):
 
 @app.route('/process_invoice', methods=['POST'])
 def process_invoice():
-    if 'files' not in request.files:
+    if 'files[]' not in request.files:
         return jsonify({'Error': 'No file provided'})
     
-    files = request.files.getlist('files')
+    files = request.files.getlist('files[]')
     entities_extracted = []
-    
+
     for file in files:
         if file.filename == '':
             continue

@@ -51,30 +51,32 @@
   <div class="container mt-5 glass-bg">
     <div class="row">
       <!-- First Row -->
-      <div class="col-md-4 mb-3">
-        <div class="input-group">
-          <div class="custom-file">
-            <form method="POST" enctype="multipart/form-data" action="/process_invoice">
-             <input type="file" class="custom-file-input" name="file" id="fileInput" accept=".jpg, .jpeg" multiple>
-              <label class="custom-file-label" for="fileInput">Choose file</label>
-          </div>
-        </div>
-        <div id="selectedImagesCount"></div>       
-      </div>
 
-      <div class="col-md-4 mb-3">
-          <button type="submit" id="processBtn" class="btn btn-primary btn-block">Process</button>
-          </form> 
-        <div class="progress mt-3" id="progressContainer" style="height: 15px; display: none; margin-top: 20px;">
-          <div class="progress">
-            <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
+        <div class="col-md-4 mb-3">
+          <form id="uploadForm">
+              <div class="input-group">
+                <div class="custom-file">
+                  <input type="file" class="custom-file-input" name="files" id="fileInput" accept=".jpg, .jpeg" multiple>
+                    <label class="custom-file-label" for="fileInput">Choose file</label>
+                </div>
+              </div>
+
+              <button type="submit" id="processBtn" class="btn btn-primary btn-block mt-2">Process</button>
+              <div id="selectedImagesCount"></div>    
+          </form>   
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <div class="progress mt-3" id="progressContainer" style="height: 15px; display: none; margin-top: 20px;">
+            <div class="progress">
+              <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
+            </div>
+            <div class="progress-text" id="progressText" style="color: black !important;"></div>
           </div>
-          <div class="progress-text" id="progressText" style="color: black !important;"></div>
+          <div id="successMessage" class="alert alert-success mt-3" role="alert" style="display: none;">
+            Successfully extracted!
+          </div>
         </div>
-        <div id="successMessage" class="alert alert-success mt-3" role="alert" style="display: none;">
-          Successfully extracted!
-        </div>
-      </div>
 
       <div class="col-md-4 mb-3">
         <a href="/download_excel" class="button">
@@ -114,109 +116,116 @@
 
   <script>
 
-// Hide loader after 30 seconds
-setTimeout(() => {
-  document.getElementById('loader').style.display = 'none';
-}, 3000);
+  // Hide loader after 1 seconds
+  setTimeout(() => {
+    document.getElementById('loader').style.display = 'none';
+  }, 1000);
 
-document.getElementById('fileInput').addEventListener('change', function(event) {
-  const files = event.target.files;
-  const selectedImagesCount = document.getElementById('selectedImagesCount');
-  selectedImagesCount.textContent = files.length + ' image(s) selected';
-});
+  document.getElementById('fileInput').addEventListener('change', function(event) {
+    const files = event.target.files;
+    const selectedImagesCount = document.getElementById('selectedImagesCount');
+    selectedImagesCount.textContent = files.length + ' image(s) selected';
+  });
 
-document.getElementById('fileInput').addEventListener('change', function(event) {
-  const files = event.target.files;
-  const imagePreviewCarousel = document.getElementById('imagePreviewCarousel');
-  const carouselInner = imagePreviewCarousel.querySelector('.carousel-inner');
-  const carouselControls = imagePreviewCarousel.querySelectorAll('.carousel-control');
+  document.getElementById('fileInput').addEventListener('change', function(event) {
+    const files = event.target.files;
+    const imagePreviewCarousel = document.getElementById('imagePreviewCarousel');
+    const carouselInner = imagePreviewCarousel.querySelector('.carousel-inner');
+    const carouselControls = imagePreviewCarousel.querySelectorAll('.carousel-control');
 
-  carouselInner.innerHTML = '';
+    carouselInner.innerHTML = '';
 
-  if (files.length <= 1) {
-    carouselControls.forEach(control => {
-      control.style.display = 'none';
-    });
-  } else {
-    carouselControls.forEach(control => {
-      control.style.display = 'block';
-    });
-  }
+    if (files.length <= 1) {
+      carouselControls.forEach(control => {
+        control.style.display = 'none';
+      });
+    } else {
+      carouselControls.forEach(control => {
+        control.style.display = 'block';
+      });
+    }
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const reader = new FileReader();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
 
-    reader.onload = function(e) {
+      reader.onload = function(e) {
 
-      const carouselItem = document.createElement('div');
-      carouselItem.classList.add('carousel-item');
+        const carouselItem = document.createElement('div');
+        carouselItem.classList.add('carousel-item');
 
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.classList.add('d-block', 'w-100');
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.classList.add('d-block', 'w-100');
 
-      carouselItem.appendChild(img);
+        carouselItem.appendChild(img);
 
-      if (i === 0) {
-        carouselItem.classList.add('active');
+        if (i === 0) {
+          carouselItem.classList.add('active');
+        }
+
+        carouselInner.appendChild(carouselItem);
+      };
+
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      progressBar.style.width = '0%';
+      progressText.innerText = '0%';
+      document.getElementById('progressContainer').style.display = 'block';
+      document.getElementById('successMessage').style.display = 'none';
+
+      var files = document.getElementById('fileInput').files;
+      var formData = new FormData();
+
+      let progress = 0;
+      const interval = setInterval(function() {
+        if (progress >= 100) {
+          clearInterval(interval);
+          successMessage.style.display = 'block';
+          setTimeout(() => {
+            successMessage.style.display = 'none';
+          }, 5000);
+          return;
+        }
+        progressBar.style.width = `${progress}%`;
+        progressText.innerText = `${progress}%`;
+        progress += 5;
+      }, 100)
+
+      for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+          formData.append('files[]', file, file.name);
       }
 
-      carouselInner.appendChild(carouselItem);
-    };
+      try {
+        const response = await fetch('/process_invoice', {
+            method: 'POST',
+            body: formData
+        });
 
-    reader.readAsDataURL(file);
-  }
-});
+        const responseData = await response.json();
+        const result = responseData.result;
+        const invoiceDataDiv = document.getElementById('invoiceData');
 
-document.getElementById('processBtn').addEventListener('click', async function() {
-  const progressBar = document.getElementById('progressBar');
-  const progressText = document.getElementById('progressText');
-  progressBar.style.width = '0%';
-  progressText.innerText = '0%';
-  document.getElementById('progressContainer').style.display = 'block';
-  document.getElementById('successMessage').style.display = 'none';
-
-let progress = 0;
-  const interval = setInterval(function() {
-    if (progress >= 100) {
+        invoiceDataDiv.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+      } catch (error) {
+          console.error('Error:', error);
+      }
+      
       clearInterval(interval);
-      successMessage.style.display = 'block';
+      progressBar.style.width = '100%';
+      progressText.innerText = '100%';
       setTimeout(() => {
-        successMessage.style.display = 'none';
-      }, 5000);
-      return;
-    }
-    progressBar.style.width = `${progress}%`;
-    progressText.innerText = `${progress}%`;
-    progress += 5;
-  }, 100)
-
-  const formData = new FormData();
-  formData.append('file', document.getElementById('fileInput').files[0]);
-
-  const response = await fetch('/process_invoice', {
-    method: 'POST',
-    body: formData
+        document.getElementById('progressContainer').style.display = 'none';
+      }, 1000);
   });
-  
-  const data = await response.json();
-  const requestId = responseData.requestId; // Extracting requestId from the response JSON directly
-
-  console.log('Request ID:', requestId); // Log the requestId to the console
-
-  const result = responseData.result;
-
-  const invoiceDataDiv = document.getElementById('invoiceData');
-  invoiceDataDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-
-  clearInterval(interval);
-  progressBar.style.width = '100%';
-  progressText.innerText = '100%';
-  setTimeout(() => {
-    document.getElementById('progressContainer').style.display = 'none';
-  }, 1000);
-});
   </script>
 
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
