@@ -20,6 +20,7 @@ body {
 .footer {
   background: rgba(0, 0, 0, 0.7);
   color: white;
+  /* position: fixed; */
 }
 
 .dotted-border {
@@ -53,7 +54,13 @@ body {
 #heading-color {
   color: black !important; /* Add !important to ensure this style takes precedence */
 }
-
+#imagePreviewCarousel,#invoiceData {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  overflow: auto;
+  overflow-y: scroll;
+  max-height: 500px;
+}
 
 /* Loader Styles */
 

@@ -60,13 +60,15 @@
                     <label class="custom-file-label" for="fileInput">Choose file</label>
                 </div>
               </div>
-
-              <button type="submit" id="processBtn" class="btn btn-primary btn-block mt-2">Process</button>
+              <div id="selectedImagesCount"></div>
+              <!-- <button type="submit" id="processBtn" class="btn btn-primary btn-block mt-2">Process</button>
               <div id="selectedImagesCount"></div>    
-          </form>   
+          </form>    -->
         </div>
 
         <div class="col-md-4 mb-3">
+          <button type="submit" id="processBtn" class="btn btn-primary btn-block">Process</button>     
+          </form>
           <div class="progress mt-3" id="progressContainer" style="height: 15px; display: none; margin-top: 20px;">
             <div class="progress">
               <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; background-color: #007bff;"></div>
