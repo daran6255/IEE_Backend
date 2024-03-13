@@ -13,6 +13,7 @@ from request_queue import RequestQueue
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 app = Flask(__name__, static_folder='frontend/static', template_folder='frontend/templates')
+tags_file = r'data/tags.json'
 
 iee_pipeline = IEEPipeline()
 request_queue = RequestQueue(size_limit=20)
@@ -30,13 +31,43 @@ def download_excel(requestId):
     data = request_queue.get(requestId)
     
     if data:
-        df = pd.DataFrame(data)
+        with open(tags_file, 'r') as f:
+            tags_data = json.load(f)
+            
+        tags = [item['name'] for item in tags_data]
+        items_tags = ['ITEMNAME', 'HSN', 'QUANTITY', 'UNIT', 'PRICE', 'AMOUNT' ] # Multi items
+        other_tags = [tag for tag in tags if tag not in items_tags]
 
-        # Save DataFrame to Excel file
-        excel_file = 'data.xlsx'
-        df.to_excel(excel_file, index=False)
+        serial_no = 1
+        df = pd.DataFrame(columns=['SL. NO'] + tags)
+        
+        for invoice in data:
+            entities = invoice['entities']
+            max_items = max(len(v) for v in entities.values())
+            
+            invoice_data = {}
 
-        return send_file(excel_file, as_attachment=True)    
+            for tag in tags:
+                if tag in entities:
+                    if tag in items_tags:
+                        invoice_data[tag] = entities[tag] + ['VERIFY IMAGE'] * (max_items - len(entities[tag]))   
+                    elif tag in other_tags:
+                        invoice_data[tag] = [entities[tag][0]] * max_items
+                else:
+                    invoice_data[tag] = ['VERIFY IMAGE'] * max_items 
+            
+            invoice_df = pd.DataFrame(invoice_data, columns=tags)
+            invoice_df.insert(0, 'SL. NO', serial_no)
+            df = pd.concat([df, invoice_df], ignore_index=True)
+            
+            serial_no += 1
+        
+        mem = io.BytesIO()
+        with pd.ExcelWriter(mem, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False)
+        mem.seek(0)
+        
+        return send_file(mem, download_name='entities.xlsx', as_attachment=True)    
     
     return jsonify({'Error': 'Request has expired'})
 
@@ -80,7 +111,7 @@ def process_invoice():
                 entities_output = iee_pipeline.extract_entities(pp_txt_ouput)
 
                 if entities_output:
-                    entities_extracted.append({'filename': file.filename, 'enitites': entities_output})
+                    entities_extracted.append({'filename': file.filename, 'entities': entities_output})
             
             else:
              continue

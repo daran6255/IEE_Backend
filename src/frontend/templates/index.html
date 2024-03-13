@@ -81,9 +81,7 @@
         </div>
 
       <div class="col-md-4 mb-3">
-        <a href="/download_excel" class="button">
-          <button class="btn btn-success btn-block" >Download Excel</button>
-        </a>
+        <button class="btn btn-success btn-block" onclick="downloadExcel()">Download Excel</button>
         <button class="btn btn-info btn-block mt-2" onclick="downloadJson()">Download JSON</button>
       </div>
 
@@ -230,9 +228,27 @@
       }, 1000);
   });
 
+  async function downloadExcel() {
+    try {
+        const response = await fetch('/download_excel/' + lastRequestId);
+        if (!response.ok) {
+            throw new Error("HTTP error " + response.status);
+        }
+        const data = await response.blob();
+        const url = window.URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', lastRequestId + '_extracted.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+  }
+
   async function downloadJson() {
     try {
-        console.log(lastRequestId);
         const response = await fetch('/download_json/' + lastRequestId);
         if (!response.ok) {
             throw new Error("HTTP error " + response.status);
