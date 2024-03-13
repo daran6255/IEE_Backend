@@ -35,7 +35,7 @@ def download_excel(requestId):
             tags_data = json.load(f)
             
         tags = [item['name'] for item in tags_data]
-        items_tags = ['ITEMNAME', 'HSN', 'QUANTITY', 'UNIT', 'PRICE', 'AMOUNT' ] # Multi items
+        items_tags = ['ITEMNAME', 'HSN', 'QUANTITY', 'UNIT', 'PRICE', 'AMOUNT'] # Multi items
         other_tags = [tag for tag in tags if tag not in items_tags]
 
         serial_no = 1

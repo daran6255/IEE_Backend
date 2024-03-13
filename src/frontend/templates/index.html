@@ -43,12 +43,12 @@
   </nav>
 
   <!-- Heading -->
-  <div class="text-center mt-4">
-    <h1 class="text-white" id="heading-color">Entity Extractor</h1>
+  <div class="text-center">
+    <h1 class="text-white" id="heading-color">Invoice Entity Extractor</h1>
   </div>
 
   <!-- Main Content -->
-  <div class="container mt-5 glass-bg">
+  <div class="container mt-3 mb-5 glass-bg">
     <div class="row">
       <!-- First Row -->
 
@@ -108,7 +108,7 @@
   </div>
 
   <!-- Footer -->
-  <footer class="bg-dark text-light text-center py-3 mt-5 footer" >
+  <footer class="bg-dark text-light text-center footer" >
     <p>&copy; 2024 <a href="www.winvinaya.com">WinVinaya InfoSystems</a>. All rights reserved.</p>
   </footer>
 
@@ -188,10 +188,6 @@
       const interval = setInterval(function() {
         if (progress >= 100) {
           clearInterval(interval);
-          successMessage.style.display = 'block';
-          setTimeout(() => {
-            successMessage.style.display = 'none';
-          }, 5000);
           return;
         }
         progressBar.style.width = `${progress}%`;
@@ -216,6 +212,11 @@
         const invoiceDataDiv = document.getElementById('invoiceData');
 
         invoiceDataDiv.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+
+        successMessage.style.display = 'block';
+        setTimeout(() => {
+          successMessage.style.display = 'none';
+        }, 5000);
       } catch (error) {
           console.error('Error:', error);
       }
