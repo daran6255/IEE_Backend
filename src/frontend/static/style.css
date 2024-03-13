@@ -19,10 +19,13 @@ body {
 
 .footer {
   background: rgba(0, 0, 0, 0.7);
-  color: white;
-  /* position: fixed; */
+  color: #fff; /* Light text color */
+  text-align: center;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }
-
 .dotted-border {
   border: 2px dotted #000000 !important;
   padding: 10px;
