@@ -16,13 +16,32 @@ body {
   padding: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
+.box-cell-ImagePreview {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  border: 1px solid #dee2e6;
+  min-height: 100px;
+}
+.box-cell-JsonPreview {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  border: 1px solid #dee2e6;
+  min-height: 100px;
+}
 .footer {
   background: rgba(0, 0, 0, 0.7);
-  color: #fff; /* Light text color */
+  color: #fff;
   text-align: center;
   padding: 10px;
-  position: fixed;
+  /* position: fixed; */
   bottom: 0;
   width: 100%;
 }
@@ -46,16 +65,18 @@ body {
 }
 .carousel-control-prev,
 .carousel-control-next {
-  color: black !important; /* Change color of carousel controls */
+  color: black !important;
+  
 }
 
 .border .carousel-control-prev,
 .border .carousel-control-next {
   color: black !important;
+  
 }
 
 #heading-color {
-  color: black !important; /* Add !important to ensure this style takes precedence */
+  color: rgb(95, 0, 0) !important; /* Add !important to ensure this style takes precedence */
 }
 #imagePreviewCarousel,#invoiceData {
   margin-top: 0;
