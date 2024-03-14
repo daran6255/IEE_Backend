@@ -39,7 +39,7 @@ def download_excel(requestId):
         other_tags = [tag for tag in tags if tag not in items_tags]
 
         serial_no = 1
-        df = pd.DataFrame(columns=['SL. NO'] + tags)
+        df = pd.DataFrame(columns=['SL. NO'] + tags + ['FILENAME'])
         
         for invoice in data:
             entities = invoice['entities']
@@ -58,6 +58,7 @@ def download_excel(requestId):
             
             invoice_df = pd.DataFrame(invoice_data, columns=tags)
             invoice_df.insert(0, 'SL. NO', serial_no)
+            invoice_df.insert(len(tags), 'FILENAME', invoice['filename']) 
             df = pd.concat([df, invoice_df], ignore_index=True)
             
             serial_no += 1
