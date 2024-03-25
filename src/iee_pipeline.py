@@ -54,4 +54,4 @@ class IEEPipeline:
     def extract_table_items(self, img_path):
         result = self.table_extractor.extract_item_table_from_image(
             img_path)
-        return {"items": result}
+        return result

@@ -8,6 +8,8 @@ import numpy as np
 
 from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects
 
+NOT_IDENTIFIED_VALUE = "N/A"
+
 
 class TableExtractor:
     _detr_model = DetrForObjectDetection.from_pretrained(
@@ -44,6 +46,7 @@ class TableExtractor:
     def _apply_ocr(self, image, cell_coordinates):
         data = dict()
         max_num_columns = 0
+
         for idx, row in enumerate(cell_coordinates):
             row_text = []
             for cell in row["cells"]:
@@ -54,7 +57,7 @@ class TableExtractor:
                     text = " ".join([x[1] for x in result])
                     row_text.append(text)
                 else:
-                    row_text.append("N/A")
+                    row_text.append(NOT_IDENTIFIED_VALUE)
 
             if len(row_text) > max_num_columns:
                 max_num_columns = len(row_text)
@@ -68,6 +71,13 @@ class TableExtractor:
                     row_data = row_data + \
                         ["" for _ in range(max_num_columns - len(row_data))]
                     data[row] = row_data
+
+        # Remove empty row and columns
+        data = {key: row_data for key, row_data in data.items() if not all(
+            val == NOT_IDENTIFIED_VALUE for val in row_data)}
+        num_cols = len(next(iter(data.values())))
+        data = {key: [row_data[i] for i in range(num_cols) if not all(
+            data[j][i] == NOT_IDENTIFIED_VALUE for j in data)] for key, row_data in data.items()}
 
         return data
 
@@ -111,7 +121,7 @@ class TableExtractor:
             cell_coordinates = get_cell_coordinates_by_row(cells)
             data = self._apply_ocr(cropped_table, cell_coordinates)
 
-            for row, row_data in data.items():
+            for _, row_data in data.items():
                 result.append(row_data)
 
         except Exception as e:
