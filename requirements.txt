@@ -26,6 +26,7 @@ easyocr==1.7.1
 filelock==3.13.1
 Flask==3.0.2
 fsspec==2024.3.1
+gyp==0.1
 httplib2==0.20.2
 huggingface-hub==0.21.4
 idna==3.3

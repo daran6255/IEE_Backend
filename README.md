@@ -67,3 +67,4 @@ inference_detector(model, 'demo/demo.jpg')
 #References
 
 1. https://github.com/open-mmlab/mmdetection/issues/6765#issuecomment-1768507085
+2. https://medium.com/swlh/ocr-engine-comparison-tesseract-vs-easyocr-729be893d3ae
