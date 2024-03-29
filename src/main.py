@@ -5,7 +5,9 @@ import uuid
 import random
 import string
 import pandas as pd
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file, redirect, url_for
+import mysql.connector
+from sympy import false
 
 from iee_pipeline import IEEPipeline
 from request_queue import RequestQueue
@@ -23,11 +25,83 @@ TEMP_DIR = 'temp'
 if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
 
+# MySQL Configuration
+DB_HOST = 'localhost'
+DB_USER = 'winvinaya_iee'
+DB_PASSWORD = 'wvi@iee123&'
+DB_NAME = 'invoice_extraction'
+DB_PORT = 3305
+
+# Connect to MySQL
+db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        
+        try:
+            cursor = db.cursor()
+            query = "SELECT * FROM user_info WHERE email = %s AND password = %s"
+            cursor.execute(query, (email, password))
+            user = cursor.fetchone()
+            cursor.close()
+            
+            if user:
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('login', error='Invalid email or password'))
+        
+        except mysql.connector.Error as err:
+            cursor.close()
+            return render_template('login.html', error='An error occurred while processing your request')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        response = request.form.to_dict()
+        name = response['name']
+        company = response['company']
+        email = response['email']
+        phone = response['phone']
+        password = response['password']
+
+        try:
+            # Check if the email already exists
+            cursor = db.cursor()
+            query = "SELECT * FROM user_info WHERE email = %s"
+            cursor.execute(query, (email,))
+            user = cursor.fetchone()
+            
+            if user:
+                print(user)
+                return render_template('register.html', error='Email already exists')
+
+            cursor = db.cursor()
+            insert_query = "INSERT INTO user_info (name, company, email, phone, password) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(insert_query, (name, company, email, phone, password))
+            db.commit()
+            cursor.close()
+
+            return redirect(url_for('login'))
+
+        except mysql.connector.Error as err:
+            cursor.close()
+            print (err)
+            return render_template('register.html', error='An error occurred while processing your request')
+      
+    return render_template('register.html')
 
 @app.route('/download_excel/<requestId>', methods=['GET'])
 def download_excel(requestId):
@@ -125,11 +199,12 @@ def process_invoice():
                     table=items_output, ner_output=entities_output)
 
                 # Get table items for mapped headings
-                indices = {k: items_output[0].index(v) for k, v in mapped_headings.items(
-                ) if v is not None and v != "N.E.R.Default"}
+                if mapped_headings:
+                    indices = {k: items_output[0].index(v) for k, v in mapped_headings.items(
+                    ) if v is not None and v != "N.E.R.Default"}
 
-                for k, idx in indices.items():
-                    entities_output[k] = [row[idx] for row in items_output[1:]]
+                    for k, idx in indices.items():
+                        entities_output[k] = [row[idx] for row in items_output[1:]]
 
                 # Add items to output
                 entities_output['items'] = items_output
@@ -151,4 +226,4 @@ def process_invoice():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

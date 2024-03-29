@@ -50,11 +50,11 @@ class DataProcessor:
                         break
 
     def apply_spell_correct_matching(self, data, keywords):
-        corrected_data = []
+        # corrected_data = []
 
-        for s in data:
-            corrected = self.spell.correction(s)
-            corrected_data.append(corrected if corrected else s)
+        # for s in data:
+        #     corrected = self.spell.correction(s)
+        #     corrected_data.append(corrected if corrected else s)
 
         for column, values in keywords.items():
             if not self.result[column]:
@@ -63,10 +63,10 @@ class DataProcessor:
                         if re.search(value, item, re.IGNORECASE):
                             self.result[column] = item
 
-                    if not self.result[column]:
-                        for idx, item in enumerate(corrected_data):
-                            if re.search(value, item, re.IGNORECASE):
-                                self.result[column] = data[idx]
+                    # if not self.result[column]:
+                    #     for idx, item in enumerate(corrected_data):
+                    #         if re.search(value, item, re.IGNORECASE):
+                    #             self.result[column] = data[idx]
 
     def process_table_data(self, table, ner_output=None):
         if self.keywords is None:
