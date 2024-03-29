@@ -64,9 +64,9 @@ def download_excel(requestId):
             invoice_df = pd.DataFrame(invoice_data, columns=tags)
             invoice_df.insert(0, 'SL. NO', serial_no)
             invoice_df.insert(len(tags), 'FILENAME', invoice['filename'])
-            df = pd.concat([df, invoice_df], ignore_index=True)
 
             serial_no += 1
+            df = pd.concat([df, invoice_df], ignore_index=True)
 
         mem = io.BytesIO()
         with pd.ExcelWriter(mem, engine='openpyxl') as writer:
@@ -120,6 +120,18 @@ def process_invoice():
                 entities_output = iee_pipeline.extract_entities(pp_txt_ouput)
 
                 items_output = iee_pipeline.extract_table_items(input_file)
+
+                mapped_headings = iee_pipeline.table_extractor.map_table_columns(
+                    table=items_output, ner_output=entities_output)
+
+                # Get table items for mapped headings
+                indices = {k: items_output[0].index(v) for k, v in mapped_headings.items(
+                ) if v is not None and v != "N.E.R.Default"}
+
+                for k, idx in indices.items():
+                    entities_output[k] = [row[idx] for row in items_output[1:]]
+
+                # Add items to output
                 entities_output['items'] = items_output
 
                 if entities_output:

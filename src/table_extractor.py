@@ -6,12 +6,23 @@ import torch
 import easyocr
 import numpy as np
 
+from data_processor import DataProcessor
 from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects
 
 NOT_IDENTIFIED_VALUE = "N/A"
 
+column_keywords = {
+    "ITEMNAME": ["Item Desc", "Item", "Description", "Product", "Product Name", "Description of Goods"],
+    "HSN": ["HSN Code", "HSN", "Item Code", "Product Code"],
+    "QUANTITY": ["Qty", "Quantity", "Qty."],
+    "UNIT": ["Unit", "Units"],
+    "PRICE": ["Cost", "Price", "Rate", "Unit Price", "Price/Unit"],
+    "AMOUNT": ["Amt", "Amount", "Total", "Total Amount", "Total Cost"]
+}
+
 
 class TableExtractor:
+    _data_processor = DataProcessor(keywords=column_keywords)
     _detr_model = DetrForObjectDetection.from_pretrained(
         "Dilipan/detr-finetuned-invoice", id2label={0: "ItemTable"}, ignore_mismatched_sizes=True)
     _processor = DetrImageProcessor.from_pretrained(
@@ -128,6 +139,14 @@ class TableExtractor:
             print(f"Error processing {img_path}: {e}")
 
         return result
+
+    def map_table_columns(self, table, ner_output=None):
+        if table:
+            new_header = self._data_processor.process_table_data(
+                table=table, ner_output=ner_output)
+            return new_header
+        else:
+            print(f"Error: Table data not provided")
 
     # def extract_table_from_pdf(self, pdf_path):
     #     extracted_text = ""
