@@ -64,16 +64,20 @@ class DataProcessor:
                             self.result[column] = item
 
                     if not self.result[column]:
-                        for item in corrected_data:
+                        for idx, item in enumerate(corrected_data):
                             if re.search(value, item, re.IGNORECASE):
-                                self.result[column] = item
+                                self.result[column] = data[idx]
 
     def process_table_data(self, table, ner_output=None):
         if self.keywords is None:
             print('Please provide Keywords for Table Data')
             return
 
+        self.result = {}
         headings = table[0]
+
+        original_to_preprocessed = {re.sub(
+            r'[^a-zA-Z0-9\s.]', ' ', item): item for item in headings}
 
         heading_mapping = {
             re.sub(r'[^a-zA-Z0-9\s.]', ' ', item): item for item in headings}
@@ -90,7 +94,7 @@ class DataProcessor:
         self.apply_fuzzy_matching(final_headings)
 
         # Map the results back to the original headings
-        self.result = {heading_mapping.get(
-            key, key): value for key, value in self.result.items()}
+        self.result = {key: original_to_preprocessed.get(
+            value, value) for key, value in self.result.items()}
 
         return self.result
