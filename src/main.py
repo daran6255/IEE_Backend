@@ -37,6 +37,10 @@ db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=
 
 @app.route('/')
 def index():
+    return render_template('login.html')
+
+@app.route('/home')
+def home():
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -53,7 +57,7 @@ def login():
             cursor.close()
             
             if user:
-                return redirect(url_for('index'))
+                return redirect(url_for('home'))
             else:
                 return redirect(url_for('login', error='Invalid email or password'))
         
@@ -226,4 +230,4 @@ def process_invoice():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
