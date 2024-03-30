@@ -11,3 +11,5 @@ src/.ipynb_checkpoints
 src/json_files
 output
 annotations
+
+*.pem
