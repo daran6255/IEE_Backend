@@ -30,7 +30,7 @@ DB_HOST = 'localhost'
 DB_USER = 'winvinaya_iee'
 DB_PASSWORD = 'wvi@iee123&'
 DB_NAME = 'invoice_extraction'
-DB_PORT = 3305
+DB_PORT = 3306
 
 # Connect to MySQL
 db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
