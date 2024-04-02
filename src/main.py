@@ -33,43 +33,49 @@ DB_NAME = 'invoice_extraction'
 DB_PORT = 3306
 
 # Connect to MySQL
-db = mysql.connector.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+db = mysql.connector.connect(
+    host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+
 
 @app.route('/')
 def index():
     return render_template('login.html')
 
+
 @app.route('/home')
 def home():
     return render_template('index.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        
+
         try:
             cursor = db.cursor()
             query = "SELECT * FROM user_info WHERE email = %s AND password = %s"
             cursor.execute(query, (email, password))
             user = cursor.fetchone()
             cursor.close()
-            
+
             if user:
                 return redirect(url_for('home'))
             else:
                 return redirect(url_for('login', error='Invalid email or password'))
-        
+
         except mysql.connector.Error as err:
             cursor.close()
             return render_template('login.html', error='An error occurred while processing your request')
 
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     return redirect(url_for('login'))
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -87,14 +93,15 @@ def register():
             query = "SELECT * FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
-            
+
             if user:
                 print(user)
                 return render_template('register.html', error='Email already exists')
 
             cursor = db.cursor()
             insert_query = "INSERT INTO user_info (name, company, email, phone, password) VALUES (%s, %s, %s, %s, %s)"
-            cursor.execute(insert_query, (name, company, email, phone, password))
+            cursor.execute(
+                insert_query, (name, company, email, phone, password))
             db.commit()
             cursor.close()
 
@@ -102,10 +109,11 @@ def register():
 
         except mysql.connector.Error as err:
             cursor.close()
-            print (err)
+            print(err)
             return render_template('register.html', error='An error occurred while processing your request')
-      
+
     return render_template('register.html')
+
 
 @app.route('/download_excel/<requestId>', methods=['GET'])
 def download_excel(requestId):
@@ -196,7 +204,6 @@ def process_invoice():
                 ocr_output = iee_pipeline.extract_text(pp_output_path)
                 pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
                 entities_output = iee_pipeline.extract_entities(pp_txt_ouput)
-
                 items_output = iee_pipeline.extract_table_items(input_file)
 
                 mapped_headings = iee_pipeline.table_extractor.map_table_columns(
@@ -208,7 +215,8 @@ def process_invoice():
                     ) if v is not None and v != "N.E.R.Default"}
 
                     for k, idx in indices.items():
-                        entities_output[k] = [row[idx] for row in items_output[1:]]
+                        entities_output[k] = [row[idx]
+                                              for row in items_output[1:]]
 
                 # Add items to output
                 entities_output['items'] = items_output
