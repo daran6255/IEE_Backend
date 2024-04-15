@@ -6,6 +6,7 @@ import random
 import string
 import pandas as pd
 from flask import Flask, jsonify, render_template, request, send_file, redirect, url_for
+from flask_cors import CORS
 import mysql.connector
 from sympy import false
 
@@ -16,6 +17,7 @@ from request_queue import RequestQueue
 
 app = Flask(__name__, static_folder='frontend/static',
             template_folder='frontend/templates')
+CORS(app)
 tags_file = r'data/tags.json'
 
 iee_pipeline = IEEPipeline()
