@@ -187,6 +187,7 @@ def process_invoice():
 
     files = request.files.getlist('files[]')
     entities_extracted = []
+    api_result = []
 
     for file in files:
         if file.filename == '':
@@ -223,15 +224,17 @@ def process_invoice():
                 # Add items to output
                 entities_output['items'] = items_output
 
-                # Remove item entities
+                # Remove item entities only for api
                 items_tags = ['ITEMNAME', 'HSN', 'QUANTITY',
                               'UNIT', 'PRICE', 'AMOUNT']
-                entities_output = {key: entities_output[key]
-                                   for key in entities_output if key not in items_tags}
+                final_result = {key: entities_output[key]
+                                for key in entities_output if key not in items_tags}
 
                 if entities_output:
                     entities_extracted.append(
                         {'filename': file.filename, 'entities': entities_output})
+                    api_result.append(
+                        {'filename': file.filename, 'entities': final_result})
 
             else:
                 continue
@@ -240,10 +243,11 @@ def process_invoice():
         requestId = str(uuid.uuid4())
         request_queue[requestId] = entities_extracted
 
-        return jsonify({'requestId': requestId, 'result': entities_extracted})
+        return jsonify({'requestId': requestId, 'result': api_result})
 
     return jsonify({'Error': 'No output extracted'})
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
