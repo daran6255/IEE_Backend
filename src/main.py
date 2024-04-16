@@ -223,6 +223,12 @@ def process_invoice():
                 # Add items to output
                 entities_output['items'] = items_output
 
+                # Remove item entities
+                items_tags = ['ITEMNAME', 'HSN', 'QUANTITY',
+                              'UNIT', 'PRICE', 'AMOUNT']
+                entities_output = {key: entities_output[key]
+                                   for key in entities_output if key not in items_tags}
+
                 if entities_output:
                     entities_extracted.append(
                         {'filename': file.filename, 'entities': entities_output})
