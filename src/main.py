@@ -135,17 +135,20 @@ def download_excel(requestId):
 
         for invoice in data:
             entities = invoice['entities']
-            max_items = max(len(v) for v in entities.values())
+            only_entities = {k: v for k, v in entities.items() if k not in [
+                'items']}
+            max_items = max(len(v) for v in only_entities.values())
 
             invoice_data = {}
 
             for tag in tags:
-                if tag in entities:
+                if tag in only_entities:
                     if tag in items_tags:
-                        invoice_data[tag] = entities[tag] + \
-                            ['VERIFY IMAGE'] * (max_items - len(entities[tag]))
+                        invoice_data[tag] = only_entities[tag] + \
+                            ['VERIFY IMAGE'] * \
+                            (max_items - len(only_entities[tag]))
                     elif tag in other_tags:
-                        invoice_data[tag] = [entities[tag][0]] * max_items
+                        invoice_data[tag] = [only_entities[tag][0]] * max_items
                 else:
                     invoice_data[tag] = ['VERIFY IMAGE'] * max_items
 
