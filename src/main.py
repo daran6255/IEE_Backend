@@ -5,10 +5,10 @@ import uuid
 import random
 import string
 import pandas as pd
-from flask import Flask, jsonify, render_template, request, send_file, redirect, url_for
+from passlib.hash import sha256_crypt
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import mysql.connector
-from sympy import false
 
 from iee_pipeline import IEEPipeline
 from request_queue import RequestQueue
@@ -39,82 +39,78 @@ db = mysql.connector.connect(
     host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
 
 
-@app.route('/')
-def index():
-    return render_template('login.html')
-
-
-@app.route('/home')
-def home():
-    return render_template('index.html')
-
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        response = request.get_json()
+        email = response['email']
+        password = response['password']
 
         try:
             cursor = db.cursor()
-            query = "SELECT * FROM user_info WHERE email = %s AND password = %s"
-            cursor.execute(query, (email, password))
+            query = "SELECT name, role, company, email, phone, password FROM user_info WHERE email = %s"
+            cursor.execute(query, (email,))
             user = cursor.fetchone()
+
             cursor.close()
 
-            if user:
-                return redirect(url_for('home'))
+            if user is not None:
+                name, role, company, email, phone, stored_password = user
+
+                if sha256_crypt.verify(password, stored_password):
+                    return jsonify(
+                        {'status': 'success',
+                         'result': {
+                             'name': name, 'role': role, 'company': company, 'email': email, 'phone': phone
+                         }}
+                    )
+                else:
+                    return jsonify({'status': 'error', 'result': 'Invalid email or password.'})
             else:
-                return redirect(url_for('login', error='Invalid email or password'))
+                return jsonify({'status': 'error', 'result': 'Email not found. Please register.'})
 
         except mysql.connector.Error as err:
             cursor.close()
-            return render_template('login.html', error='An error occurred while processing your request')
+            print(err)
 
-    return render_template('login.html')
-
-
-@app.route('/logout')
-def logout():
-    return redirect(url_for('login'))
+    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
-        response = request.form.to_dict()
+        response = request.get_json()
         name = response['name']
+        role = response['role']
         company = response['company']
         email = response['email']
         phone = response['phone']
         password = response['password']
 
         try:
-            # Check if the email already exists
             cursor = db.cursor()
             query = "SELECT * FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
 
             if user:
-                print(user)
-                return render_template('register.html', error='Email already exists')
+                return jsonify({'status': 'error', 'result': 'User already present. Please login.'})
 
             cursor = db.cursor()
-            insert_query = "INSERT INTO user_info (name, company, email, phone, password) VALUES (%s, %s, %s, %s, %s)"
+            encrypted_password = sha256_crypt.hash(password)
+            insert_query = "INSERT INTO user_info (name, role, company, email, phone, password) VALUES (%s, %s, %s, %s, %s, %s)"
             cursor.execute(
-                insert_query, (name, company, email, phone, password))
+                insert_query, (name, role, company, email, phone, encrypted_password))
             db.commit()
             cursor.close()
 
-            return redirect(url_for('login'))
+            return jsonify({'status': 'success', 'result': 'User registered successfully!'})
 
         except mysql.connector.Error as err:
             cursor.close()
             print(err)
-            return render_template('register.html', error='An error occurred while processing your request')
 
-    return render_template('register.html')
+    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
 
 
 @app.route('/download_excel/<requestId>', methods=['GET'])
@@ -252,5 +248,4 @@ def process_invoice():
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port=5000)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
