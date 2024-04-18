@@ -5,19 +5,28 @@ import uuid
 import random
 import string
 import pandas as pd
+from dotenv import load_dotenv
 from passlib.hash import sha256_crypt
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import mysql.connector
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 from iee_pipeline import IEEPipeline
 from request_queue import RequestQueue
+from utility import send_email
 
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+load_dotenv(override=True)
 
 app = Flask(__name__, static_folder='frontend/static',
             template_folder='frontend/templates')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
 CORS(app)
+
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 tags_file = r'data/tags.json'
 
 iee_pipeline = IEEPipeline()
@@ -48,16 +57,18 @@ def login():
 
         try:
             cursor = db.cursor()
-            query = "SELECT name, role, company, email, phone, password FROM user_info WHERE email = %s"
+            query = "SELECT name, role, company, email, phone, password, verified FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
 
             cursor.close()
 
             if user is not None:
-                name, role, company, email, phone, stored_password = user
+                name, role, company, email, phone, stored_password, verified = user
 
-                if sha256_crypt.verify(password, stored_password):
+                if not verified:
+                    return jsonify({'status': 'error', 'result': 'Email verification not done'})
+                elif sha256_crypt.verify(password, stored_password):
                     return jsonify(
                         {'status': 'success',
                          'result': {
@@ -65,9 +76,9 @@ def login():
                          }}
                     )
                 else:
-                    return jsonify({'status': 'error', 'result': 'Invalid email or password.'})
+                    return jsonify({'status': 'error', 'result': 'Invalid email or password'})
             else:
-                return jsonify({'status': 'error', 'result': 'Email not found. Please register.'})
+                return jsonify({'status': 'error', 'result': 'Email not found. Please register'})
 
         except mysql.connector.Error as err:
             cursor.close()
@@ -94,15 +105,18 @@ def register():
             user = cursor.fetchone()
 
             if user:
-                return jsonify({'status': 'error', 'result': 'User already present. Please login.'})
+                return jsonify({'status': 'error', 'result': 'User already present. Please login'})
 
             cursor = db.cursor()
+            verification_code = serializer.dumps(email)
             encrypted_password = sha256_crypt.hash(password)
-            insert_query = "INSERT INTO user_info (name, role, company, email, phone, password) VALUES (%s, %s, %s, %s, %s, %s)"
+            insert_query = "INSERT INTO user_info (name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(
-                insert_query, (name, role, company, email, phone, encrypted_password))
+                insert_query, (name, role, company, email, phone, encrypted_password, verification_code))
             db.commit()
             cursor.close()
+
+            send_email(email, verification_code)
 
             return jsonify({'status': 'success', 'result': 'User registered successfully!'})
 
@@ -111,6 +125,22 @@ def register():
             print(err)
 
     return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
+
+
+@app.route('/verify_email/<token>')
+def verify_email(token):
+    try:
+        email = serializer.loads(token, max_age=3600)
+    except SignatureExpired:
+        return jsonify({'status': 'error', 'result': 'The confirmation link is invalid or has expired'})
+
+    cursor = db.cursor()
+    cursor.execute(
+        "UPDATE user_info SET verified = TRUE WHERE email = %s", (email,))
+    db.commit()
+    cursor.close()
+
+    return jsonify({'status': 'success', 'result': 'Email confirmed!'})
 
 
 @app.route('/download_excel/<requestId>', methods=['GET'])

@@ -7,7 +7,9 @@ CREATE TABLE user_info (
     company VARCHAR(100),
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    verificationCode VARCHAR(255),
+    verified BOOLEAN DEFAULT 0
 );
 
 DESCRIBE user_info;

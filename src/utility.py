@@ -1,4 +1,8 @@
+import os
 import torch
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 class MaxResize(object):
@@ -114,3 +118,26 @@ def get_cell_coordinates_by_row(table_data):
     cell_coordinates.sort(key=lambda x: x['row'][1])
 
     return cell_coordinates
+
+
+def send_email(user_email, token):
+    host_url = os.getenv('HOST')
+    email_domain = os.getenv('EMAIL_DOMAIN')
+    email_address = os.getenv('EMAIL_ADDRESS')
+    email_password = os.getenv('EMAIL_PASSWORD')
+
+    smtplibObj = smtplib.SMTP(email_domain, 587)
+    smtplibObj.starttls()
+    smtplibObj.login(email_address, email_password)
+
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = user_email
+    msg['Subject'] = "IEE Email Confirmation"
+    body = f"Please confirm your email by clicking on the following link: {host_url}/verify-email/{token}"
+    msg.attach(MIMEText(body, 'plain'))
+
+    smtplibObj.send_message(msg)
+    del msg
+
+    smtplibObj.quit()

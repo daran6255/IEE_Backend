@@ -1,11 +1,21 @@
-#Step 1: text cleaning
-            # special charecters, puntucations marks, charecter symbols,
-#Step 2: Tokenization
-            # Split the text into individual tokens, such as words or numbers.
-#Step 3: Normalization
-            # Convert tokens to a standard format such as lowercase.
-#Step 4: Date_standardization
-            # Extract and standardize date formats from the invoice to (dd-mm-yyy).
+## Installation
+
+Add the following to `.env` file
+
+```
+SECRET_KEY='some-key'
+HOST='http://127.0.0.1:3000'
+EMAIL_DOMAIN='smtp.<domaon>.com'
+EMAIL_ADDRESS='admin.iee@winvinaya.com'
+EMAIL_PASSWORD='<your-password>'
+```
+
+## Notes
+
+#Step 1: text cleaning # special charecters, puntucations marks, charecter symbols,
+#Step 2: Tokenization # Split the text into individual tokens, such as words or numbers.
+#Step 3: Normalization # Convert tokens to a standard format such as lowercase.
+#Step 4: Date_standardization # Extract and standardize date formats from the invoice to (dd-mm-yyy).
 
             text_clean(invoice)
                 # remove non alpha numeric charecteres
@@ -30,19 +40,22 @@
                 # save final output to final_text_annotations.txt
                 # array of strings - Tokanization output
                 # index - final_text_annotations{index}.txt
-## image processing
+
+### image processing
+
     # step1: grayscale convertion
     # step2: Noise reduction or removal (blur, smoothing techniques)
     # step3: image enhancement (contrast, sharpness)
     # step4: adaptive thresholding
-    # step5: rotations corrections 
+    # step5: rotations corrections
     # step6: deskewing
     # step7: background subtraction
     # step8: text edge enhancement
     # step9: colour space transformation
     # step10: Morphological Operations (erosion and dilation)
 
-## Install MM detection
+### Install MM detection
+
 ```
 conda create --name openmmlab python=3.8 -y
 conda activate openmmlab
@@ -55,6 +68,7 @@ mim install mmdet
 ```
 
 For Testing, run
+
 ```
 from mmdet.apis import init_detector, inference_detector
 
