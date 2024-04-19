@@ -27,6 +27,7 @@ CREATE TABLE credits (
     creditsBought INT NOT NULL,
     amountPaid DECIMAL(10, 2) NOT NULL,
     paymentStatus BOOLEAN DEFAULT 0,
+    paymentDate TIMESTAMP,
     createdDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (userId) REFERENCES user_info(id)
