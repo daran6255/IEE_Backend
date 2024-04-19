@@ -18,17 +18,19 @@ CREATE TABLE user_info (
     password VARCHAR(255) NOT NULL,
     verificationCode VARCHAR(255),
     verified BOOLEAN DEFAULT 0,
-    available_credits INT DEFAULT 0
+    availableCredits INT DEFAULT 0
 );
 
 CREATE TABLE credits (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    User_id INT,
-    FOREIGN KEY (User_id) REFERENCES user_info(id),
-    credits_bought INT,
-    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    amount_paid DECIMAL(10, 2),
-    payment_status BOOLEAN DEFAULT 0
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    creditsBought INT NOT NULL,
+    amountPaid DECIMAL(10, 2) NOT NULL,
+    paymentStatus BOOLEAN DEFAULT 0,
+    createdDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 
 DESCRIBE user_info;
+DESCRIBE credits;
