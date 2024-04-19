@@ -118,7 +118,46 @@ def register():
 
             send_email(email, verification_code)
 
-            return jsonify({'status': 'success', 'result': 'User registered successfully!'})
+            return jsonify({'status': 'success', 'result': 'Verification email has been sent to your email'})
+
+        except mysql.connector.Error as err:
+            cursor.close()
+            print(err)
+
+    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
+
+
+@app.route('/update_password', methods=['POST'])
+def update_password():
+    if request.method == 'POST':
+        response = request.get_json()
+        email = response['email']
+        old_password = response['oldPassword']
+        new_password = response['newPassword']
+
+        try:
+            cursor = db.cursor()
+            query = "SELECT password FROM user_info WHERE email = %s"
+            cursor.execute(query, (email,))
+            user = cursor.fetchone()
+
+            cursor.close()
+
+            if user is not None:
+                stored_password = user[0]
+
+                if sha256_crypt.verify(old_password, stored_password):
+                    encrypted_password = sha256_crypt.hash(new_password)
+                    cursor = db.cursor()
+                    cursor.execute(
+                        "UPDATE user_info SET password = %s WHERE email = %s", (encrypted_password, email))
+                    db.commit()
+                    cursor.close()
+                    return jsonify({'status': 'success', 'result': 'Password updated successfully'})
+                else:
+                    return jsonify({'status': 'error', 'result': 'Wrong password entered'})
+            else:
+                return jsonify({'status': 'error', 'result': 'Wrong email provided!'})
 
         except mysql.connector.Error as err:
             cursor.close()
