@@ -5,9 +5,18 @@ Add the following to `.env` file
 ```
 SECRET_KEY='some-key'
 HOST='http://127.0.0.1:3000'
+
+# smtp variables
 EMAIL_DOMAIN='smtp.<domaon>.com'
 EMAIL_ADDRESS='admin.iee@winvinaya.com'
 EMAIL_PASSWORD='<your-password>'
+
+# DB variables
+DB_HOST = 'localhost'
+DB_USER = 'winvinaya_iee'
+DB_PASSWORD = 'password'
+DB_NAME = 'invoice_extraction'
+DB_PORT = 3306
 ```
 
 ## Notes

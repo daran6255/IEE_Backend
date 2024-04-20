@@ -36,16 +36,14 @@ TEMP_DIR = 'temp'
 if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
 
-# MySQL Configuration
-DB_HOST = 'localhost'
-DB_USER = 'winvinaya_iee'
-DB_PASSWORD = 'wvi@iee123&'
-DB_NAME = 'invoice_extraction'
-DB_PORT = 3306
-
 # Connect to MySQL
 db = mysql.connector.connect(
-    host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+    host=os.getenv('DB_HOST'),
+    port=os.getenv('DB_PORT'),
+    user=os.getenv('DB_USER'),
+    password=os.getenv('DB_PASSWORD'),
+    database=os.getenv('DB_NAME')
+)
 
 
 @app.route('/login', methods=['POST'])
