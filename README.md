@@ -3,6 +3,8 @@
 Add the following to `.env` file
 
 ```
+ENV='prod/dev'
+PLATFORM='win/linux'
 SECRET_KEY='some-key'
 HOST='http://127.0.0.1:3000'
 

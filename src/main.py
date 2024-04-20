@@ -313,9 +313,10 @@ def process_invoice():
 
     return jsonify({'Error': 'No output extracted'})
 
+
 @app.route('/credits_history/<user_id>', methods=['GET'])
 def get_credits_history(user_id):
-    
+
     try:
         cursor = db.cursor()
         query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate FROM credits WHERE userId = %s"
@@ -337,5 +338,9 @@ def get_credits_history(user_id):
     except Exception as e:
         return jsonify({'error': str(e)})
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    if os.getenv('ENV') == 'prod':
+        app.run(host='0.0.0.0', port=5000)
+    else:
+        app.run(host='0.0.0.0', port=5000, debug=True)
