@@ -313,6 +313,29 @@ def process_invoice():
 
     return jsonify({'Error': 'No output extracted'})
 
+@app.route('/credits_history/<user_id>', methods=['GET'])
+def get_credits_history(user_id):
+    
+    try:
+        cursor = db.cursor()
+        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate FROM credits WHERE userId = %s"
+        cursor.execute(query, (user_id,))
+        credits_history = cursor.fetchall()
+        cursor.close()
+
+        result = []
+        for row in credits_history:
+            result.append({
+                'userId': row[0],
+                'creditsBought': row[1],
+                'amountPaid': float(row[2]),
+                'paymentStatus': bool(row[3]),
+                'paymentDate': row[4].isoformat() if row[4] else None
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
