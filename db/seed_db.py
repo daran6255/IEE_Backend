@@ -1,4 +1,5 @@
 import os
+import uuid
 from dotenv import load_dotenv
 from passlib.hash import sha256_crypt
 import mysql.connector
@@ -17,11 +18,11 @@ db = mysql.connector.connect(
 cursor = db.cursor()
 
 users = [
-    ("user1", "customer", "ABC", "demo1@example.com",
+    (str(uuid.uuid4()), "user1", "customer", "ABC", "demo1@example.com",
      "1234567890", sha256_crypt.hash("pass123"), "1dfdh456456", True, 250),
-    ("user2", "customer", "XYZ", "demo2@example.com",
+    (str(uuid.uuid4()), "user2", "customer", "XYZ", "demo2@example.com",
      "9876543210", sha256_crypt.hash("pass456"), "1dfgsghjyjytj", True, 120),
-    ("user3", "customer", "taydens", "demo3@example.com",
+    (str(uuid.uuid4()), "user3", "customer", "taydens", "demo3@example.com",
      "7603903469", sha256_crypt.hash("pass789"), "1435353fhtrjrtjrt", True, 210)
 ]
 
@@ -58,13 +59,14 @@ credits = [
 
 for i in range(len(users)):
     cursor.execute(
-        "INSERT INTO user_info (name, role, company, email, phone, password, verificationCode, verified, availableCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", users[i])
-    user_id = cursor.lastrowid
+        "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", users[i])
+
+    user_id = users[i][0]
 
     for credit in credits[i]:
         credit_record = (user_id,) + credit
-        cursor.execute(
-            "INSERT INTO credits (userId, creditsBought, amountPaid, paymentStatus, paymentDate) VALUES (%s, %s, %s, %s, %s)", credit_record)
+        cursor.execute("INSERT INTO credits (userId, creditsBought, amountPaid, paymentStatus, paymentDate) VALUES (%s, %s, %s, %s, %s)",
+                       credit_record)
 
 db.commit()
 cursor.close()

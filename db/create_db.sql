@@ -9,7 +9,7 @@ FLUSH PRIVILEGES;
 USE invoice_extraction;
 
 CREATE TABLE user_info (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     role VARCHAR(10) NOT NULL,
     company VARCHAR(100),
@@ -23,7 +23,7 @@ CREATE TABLE user_info (
 
 CREATE TABLE credits (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    userId INT NOT NULL,
+    userId VARCHAR(36) NOT NULL,
     creditsBought INT NOT NULL,
     amountPaid DECIMAL(10, 2) NOT NULL,
     paymentStatus BOOLEAN DEFAULT 0,

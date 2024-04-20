@@ -55,14 +55,14 @@ def login():
 
         try:
             cursor = db.cursor()
-            query = "SELECT name, role, company, email, phone, password, verified FROM user_info WHERE email = %s"
+            query = "SELECT id, name, role, company, email, phone, password, verified FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
 
             cursor.close()
 
             if user is not None:
-                name, role, company, email, phone, stored_password, verified = user
+                id, name, role, company, email, phone, stored_password, verified = user
 
                 if not verified:
                     return jsonify({'status': 'error', 'result': 'Email verification not done'})
@@ -70,7 +70,7 @@ def login():
                     return jsonify(
                         {'status': 'success',
                          'result': {
-                             'name': name, 'role': role, 'company': company, 'email': email, 'phone': phone
+                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email, 'phone': phone
                          }}
                     )
                 else:
