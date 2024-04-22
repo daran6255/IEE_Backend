@@ -61,7 +61,7 @@ credits = [
 
 if setup_admin == True:
     admin = (str(uuid.uuid4()), "admin", "admin", "XYZ", "admin@gmail.com",
-             "1234567890", sha256_crypt.hash("admin123"), "1dfdh456456", True, 0)
+             "1234567890", sha256_crypt.hash("admin123"), "1dfdh456456", True, 0, 0)
     cursor.execute(
         "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits, totalCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", admin)
 

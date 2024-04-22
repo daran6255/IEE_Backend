@@ -18,7 +18,8 @@ CREATE TABLE user_info (
     password VARCHAR(255) NOT NULL,
     verificationCode VARCHAR(255),
     verified BOOLEAN DEFAULT 0,
-    availableCredits INT DEFAULT 0
+    availableCredits INT DEFAULT 0,
+    totalCredits INT DEFAULT 0
 );
 
 CREATE TABLE credits (
@@ -29,9 +30,24 @@ CREATE TABLE credits (
     paymentStatus BOOLEAN DEFAULT 0,
     paymentDate TIMESTAMP,
     createdDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 
+CREATE TABLE dashboard_stats (
+    lock_id INT NOT NULL DEFAULT 1,
+    total_customers INT DEFAULT 0,
+    total_credits INT DEFAULT 0,
+    used_credits INT DEFAULT 0,
+    total_invoice_extracted INT DEFAULT 0,
+    total_amount DECIMAL(10, 2) DEFAULT 0.00,
+    PRIMARY KEY (lock_id)
+);
+
+INSERT INTO
+    dashboard_stats (lock_id)
+VALUES
+    (1);
+
 DESCRIBE user_info;
+
 DESCRIBE credits;
