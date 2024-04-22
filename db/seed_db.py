@@ -6,6 +6,8 @@ import mysql.connector
 
 load_dotenv(override=True)
 
+setup_admin = True
+
 # Connect to MySQL
 db = mysql.connector.connect(
     host=os.getenv('DB_HOST'),
@@ -57,6 +59,14 @@ credits = [
     ]
 ]
 
+if setup_admin == True:
+    admin = (str(uuid.uuid4()), "admin", "admin", "XYZ", "admin@gmail.com",
+             "1234567890", sha256_crypt.hash("admin123"), "1dfdh456456", True, 0)
+    cursor.execute(
+        "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", admin)
+
+print('Admin account added.')
+
 for i in range(len(users)):
     cursor.execute(
         "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", users[i])
@@ -67,6 +77,8 @@ for i in range(len(users)):
         credit_record = (user_id,) + credit
         cursor.execute("INSERT INTO credits (userId, creditsBought, amountPaid, paymentStatus, paymentDate) VALUES (%s, %s, %s, %s, %s)",
                        credit_record)
+
+print('Customer test account added.')
 
 db.commit()
 cursor.close()

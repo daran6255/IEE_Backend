@@ -70,7 +70,7 @@ def login():
                     return jsonify(
                         {'status': 'success',
                          'result': {
-                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email, 'phone': phone, 'creditsavailable':availableCredits
+                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email, 'phone': phone, 'creditsavailable': availableCredits
                          }}
                     )
                 else:
@@ -108,9 +108,9 @@ def register():
             cursor = db.cursor()
             verification_code = serializer.dumps(email)
             encrypted_password = sha256_crypt.hash(password)
-            insert_query = "INSERT INTO user_info (name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            insert_query = "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(
-                insert_query, (name, role, company, email, phone, encrypted_password, verification_code))
+                insert_query, (str(uuid.uuid4()), name, role, company, email, phone, encrypted_password, verification_code))
             db.commit()
             cursor.close()
 
