@@ -19,7 +19,8 @@ CREATE TABLE user_info (
     verificationCode VARCHAR(255),
     verified BOOLEAN DEFAULT 0,
     availableCredits INT DEFAULT 0,
-    totalCredits INT DEFAULT 0
+    totalCredits INT DEFAULT 0,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE credits (
@@ -29,7 +30,7 @@ CREATE TABLE credits (
     amountPaid DECIMAL(10, 2) NOT NULL,
     paymentStatus BOOLEAN DEFAULT 0,
     paymentDate TIMESTAMP,
-    createdDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 

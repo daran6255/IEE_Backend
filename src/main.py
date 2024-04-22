@@ -70,7 +70,7 @@ def login():
                     return jsonify(
                         {'status': 'success',
                          'result': {
-                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email, 
+                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
                              'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits
                          }}
                     )
@@ -319,7 +319,7 @@ def process_invoice():
 def get_customers():
     try:
         cursor = db.cursor()
-        query = "SELECT id, name, company, email, phone, verified, availableCredits FROM user_info WHERE role = 'customer'"
+        query = "SELECT id, name, company, email, phone, verified, availableCredits, createdAt FROM user_info WHERE role = 'customer'"
         cursor.execute(query)
         customers = cursor.fetchall()
         cursor.close()
@@ -337,7 +337,7 @@ def get_credits_history(user_id):
 
     try:
         cursor = db.cursor()
-        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate FROM credits WHERE userId = %s"
+        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate, createdAt FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
         cursor.close()
