@@ -314,6 +314,23 @@ def process_invoice():
     return jsonify({'Error': 'No output extracted'})
 
 
+@app.route('/get_customers', methods=['GET'])
+def get_customers():
+    try:
+        cursor = db.cursor()
+        query = "SELECT id, name, company, email, phone, verified, availableCredits FROM user_info WHERE role = 'customer'"
+        cursor.execute(query)
+        customers = cursor.fetchall()
+        cursor.close()
+
+        result = [dict(zip([column[0] for column in cursor.description], row))
+                  for row in customers]
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 @app.route('/credits_history/<user_id>', methods=['GET'])
 def get_credits_history(user_id):
 
