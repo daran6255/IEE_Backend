@@ -30,7 +30,8 @@ CREATE TABLE credits (
     amountPaid DECIMAL(10, 2) NOT NULL,
     paymentStatus BOOLEAN DEFAULT 0,
     paymentDate TIMESTAMP,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    added_by VARCHAR(100),
     FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 

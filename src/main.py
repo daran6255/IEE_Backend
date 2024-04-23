@@ -337,7 +337,7 @@ def get_credits_history(user_id):
 
     try:
         cursor = db.cursor()
-        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate, createdAt FROM credits WHERE userId = %s"
+        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate, createdAt, addedBy FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
         cursor.close()
@@ -349,7 +349,8 @@ def get_credits_history(user_id):
                 'creditsBought': row[1],
                 'amountPaid': float(row[2]),
                 'paymentStatus': bool(row[3]),
-                'paymentDate': row[4].isoformat() if row[4] else None
+                'paymentDate': row[4].isoformat() if row[4] else None,
+                'addedBy': row[5]
             })
 
         return jsonify(result)
