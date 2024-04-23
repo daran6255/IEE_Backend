@@ -384,6 +384,22 @@ def get_dashboard_stats():
         return jsonify({'error': str(e)})
 
 
+@app.route('/buy_credits/<user_id>', methods=['POST'])
+def buy_credits(user_id):
+    try:
+        response = request.get_json()
+        credits = response['credits']
+
+        cursor = db.cursor()
+        query = "INSERT INTO credits(userId, creditsBought, amountPaid, paymentStatus, paymentDate) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (user_id, credits))
+        db.commit()
+        cursor.close()
+        return jsonify({''})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 if __name__ == '__main__':
     if os.getenv('ENV') == 'prod':
         app.run(host='0.0.0.0', port=5000)
