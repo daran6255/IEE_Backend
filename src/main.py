@@ -374,12 +374,12 @@ def get_dashboard_stats():
             result.append({
                 'totalCustomers': row[0],
                 'totalCredits': float(row[1]),
-                'usedCredits': bool(row[2]),
+                'usedCredits': row[2],
                 'totalInvoiceExtracted': row[3],
                 'totalAmount': str(row[4]) if row[4] is not None else None
             })
 
-        return jsonify(result)
+        return jsonify(result[0])
     except Exception as e:
         return jsonify({'error': str(e)})
 
