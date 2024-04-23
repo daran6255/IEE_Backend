@@ -319,7 +319,7 @@ def process_invoice():
 def get_customers():
     try:
         cursor = db.cursor()
-        query = "SELECT id, name, company, email, phone, verified, availableCredits, createdAt FROM user_info WHERE role = 'customer'"
+        query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, createdAt FROM user_info WHERE role = 'customer'"
         cursor.execute(query)
         customers = cursor.fetchall()
         cursor.close()
