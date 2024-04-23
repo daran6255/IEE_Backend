@@ -36,17 +36,17 @@ CREATE TABLE credits (
 );
 
 CREATE TABLE dashboard_stats (
-    lock_id INT NOT NULL DEFAULT 1,
-    total_customers INT DEFAULT 0,
-    total_credits INT DEFAULT 0,
-    used_credits INT DEFAULT 0,
-    total_invoice_extracted INT DEFAULT 0,
-    total_amount DECIMAL(10, 2) DEFAULT 0.00,
-    PRIMARY KEY (lock_id)
+    lockId INT NOT NULL DEFAULT 1,
+    totalCustomers INT DEFAULT 0,
+    totalCredits INT DEFAULT 0,
+    usedCredits INT DEFAULT 0,
+    totalInvoice_extracted INT DEFAULT 0,
+    totalAmount DECIMAL(10, 2) DEFAULT 0.00,
+    PRIMARY KEY (lockId)
 );
 
 INSERT INTO
-    dashboard_stats (lock_id)
+    dashboard_stats (lockId)
 VALUES
     (1);
 

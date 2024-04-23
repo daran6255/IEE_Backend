@@ -337,7 +337,7 @@ def get_credits_history(user_id):
 
     try:
         cursor = db.cursor()
-        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, paymentDate, createdAt, addedBy FROM credits WHERE userId = %s"
+        query = "SELECT userId, addedBy, creditsBought, amountPaid, paymentStatus, paymentDate, createdDate FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
         cursor.close()
@@ -346,11 +346,12 @@ def get_credits_history(user_id):
         for row in credits_history:
             result.append({
                 'userId': row[0],
-                'creditsBought': row[1],
-                'amountPaid': float(row[2]),
-                'paymentStatus': bool(row[3]),
-                'paymentDate': row[4].isoformat() if row[4] else None,
-                'addedBy': row[5]
+                'addedBy': row[1],
+                'creditsBought': row[2],
+                'amountPaid': float(row[3]),
+                'paymentStatus': bool(row[4]),
+                'paymentDate': row[5].isoformat() if row[5] else None,
+                'createdDate': row[6]    
             })
 
         return jsonify(result)
@@ -362,7 +363,7 @@ def get_dashboard_stats():
 
     try:
         cursor = db.cursor()
-        query = "SELECT lock_id, total_customers, total_credits, used_credits, total_invoice_extracted, total_amount FROM dashboard_stats"
+        query = "SELECT lockId, totalCustomers, totalCredits, usedCredits, totalInvoiceExtracted, totalAmount FROM dashboard_stats"
         cursor.execute(query)
         credits_history = cursor.fetchall()
         cursor.close()
@@ -370,12 +371,12 @@ def get_dashboard_stats():
         result = []
         for row in credits_history:
             result.append({
-                'lock_id': row[0],
-                'total_customers': row[1],
-                'total_credits': float(row[2]),
-                'used_credits': bool(row[3]),
-                'total_invoice_extracted': row[4],
-                'total_amount': str(row[5]) if row[4] is not None else None
+                'lockId': row[0],
+                'totalCustomers': row[1],
+                'totalCredits': float(row[2]),
+                'usedCredits': bool(row[3]),
+                'totalInvoiceExtracted': row[4],
+                'totalAmount': str(row[5]) if row[4] is not None else None
             })
 
         return jsonify(result)
