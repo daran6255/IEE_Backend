@@ -337,7 +337,7 @@ def get_credits_history(user_id):
 
     try:
         cursor = db.cursor()
-        query = "SELECT userId, addedBy, creditsBought, amountPaid, paymentStatus, paymentDate, createdDate FROM credits WHERE userId = %s"
+        query = "SELECT userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate, createdAt FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
         cursor.close()
@@ -346,24 +346,25 @@ def get_credits_history(user_id):
         for row in credits_history:
             result.append({
                 'userId': row[0],
-                'addedBy': row[1],
-                'creditsBought': row[2],
-                'amountPaid': float(row[3]),
-                'paymentStatus': bool(row[4]),
+                'creditsBought': row[1],
+                'amountPaid': float(row[2]),
+                'paymentStatus': bool(row[3]),
+                'addedBy': row[4],
                 'paymentDate': row[5].isoformat() if row[5] else None,
-                'createdDate': row[6]    
+                'createdDate': row[6]
             })
 
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)})
-    
+
+
 @app.route('/dashboard_stats', methods=['GET'])
 def get_dashboard_stats():
 
     try:
         cursor = db.cursor()
-        query = "SELECT lockId, totalCustomers, totalCredits, usedCredits, totalInvoiceExtracted, totalAmount FROM dashboard_stats"
+        query = "SELECT totalCustomers, totalCredits, usedCredits, totalInvoiceExtracted, totalAmount FROM dashboard_stats"
         cursor.execute(query)
         credits_history = cursor.fetchall()
         cursor.close()
@@ -371,12 +372,11 @@ def get_dashboard_stats():
         result = []
         for row in credits_history:
             result.append({
-                'lockId': row[0],
-                'totalCustomers': row[1],
-                'totalCredits': float(row[2]),
-                'usedCredits': bool(row[3]),
-                'totalInvoiceExtracted': row[4],
-                'totalAmount': str(row[5]) if row[4] is not None else None
+                'totalCustomers': row[0],
+                'totalCredits': float(row[1]),
+                'usedCredits': bool(row[2]),
+                'totalInvoiceExtracted': row[3],
+                'totalAmount': str(row[4]) if row[4] is not None else None
             })
 
         return jsonify(result)

@@ -31,7 +31,7 @@ CREATE TABLE credits (
     paymentStatus BOOLEAN DEFAULT 0,
     paymentDate TIMESTAMP,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    added_by VARCHAR(100),
+    addedBy VARCHAR(10) NOT NULL,
     FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 
@@ -40,7 +40,7 @@ CREATE TABLE dashboard_stats (
     totalCustomers INT DEFAULT 0,
     totalCredits INT DEFAULT 0,
     usedCredits INT DEFAULT 0,
-    totalInvoice_extracted INT DEFAULT 0,
+    totalInvoiceExtracted INT DEFAULT 0,
     totalAmount DECIMAL(10, 2) DEFAULT 0.00,
     PRIMARY KEY (lockId)
 );
