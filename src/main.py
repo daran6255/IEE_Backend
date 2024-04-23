@@ -355,6 +355,31 @@ def get_credits_history(user_id):
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+@app.route('/dashboard_stats', methods=['GET'])
+def get_dashboard_stats():
+
+    try:
+        cursor = db.cursor()
+        query = "SELECT lock_id, total_customers, total_credits, used_credits, total_invoice_extracted, total_amount FROM dashboard_stats"
+        cursor.execute(query)
+        credits_history = cursor.fetchall()
+        cursor.close()
+
+        result = []
+        for row in credits_history:
+            result.append({
+                'lock_id': row[0],
+                'total_customers': row[1],
+                'total_credits': float(row[2]),
+                'used_credits': bool(row[3]),
+                'total_invoice_extracted': row[4],
+                'total_amount': str(row[5]) if row[4] is not None else None
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 
 if __name__ == '__main__':
