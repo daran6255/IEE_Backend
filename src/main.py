@@ -2,6 +2,7 @@ import io
 import os
 import json
 import uuid
+import time
 import random
 import string
 import pandas as pd
@@ -49,6 +50,9 @@ db = mysql.connector.connect(
 
 @app.route('/login', methods=['POST'])
 def login():
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
+
     if request.method == 'POST':
         response = request.get_json()
         email = response['email']
@@ -59,36 +63,40 @@ def login():
             query = "SELECT id, name, role, company, email, phone, password, availableCredits, totalCredits, verified FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
-
-            cursor.close()
+            db.commit()
 
             if user is not None:
                 id, name, role, company, email, phone, stored_password, availableCredits, totalCredits, verified = user
 
                 if not verified:
-                    return jsonify({'status': 'error', 'result': 'Email verification not done'})
+                    result = {'status': 'error',
+                              'result': 'Email verification not done'}
                 elif sha256_crypt.verify(password, stored_password):
-                    return jsonify(
-                        {'status': 'success',
-                         'result': {
-                             'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
-                             'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits
-                         }}
-                    )
+                    result = {'status': 'success',
+                              'result': {
+                                  'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
+                                  'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits
+                              }}
                 else:
-                    return jsonify({'status': 'error', 'result': 'Invalid email or password'})
+                    result = {'status': 'error',
+                              'result': 'Invalid email or password'}
             else:
-                return jsonify({'status': 'error', 'result': 'Email not found. Please register'})
+                result = {'status': 'error',
+                          'result': 'Email not found. Please register'}
 
         except mysql.connector.Error as err:
-            cursor.close()
             print(err)
+        finally:
+            cursor.close()
 
-    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
+    return jsonify(result)
 
 
 @app.route('/register', methods=['POST'])
 def register():
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
+
     if request.method == 'POST':
         response = request.get_json()
         name = response['name']
@@ -103,32 +111,38 @@ def register():
             query = "SELECT * FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
+            db.commit()
 
             if user:
-                return jsonify({'status': 'error', 'result': 'User already present. Please login'})
+                result = {'status': 'error',
+                          'result': 'User already present. Please login'}
+            else:
+                verification_code = serializer.dumps(email)
+                encrypted_password = sha256_crypt.hash(password)
+                insert_query = "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                cursor.execute(
+                    insert_query, (str(uuid.uuid4()), name, role, company, email, phone, encrypted_password, verification_code))
+                db.commit()
 
-            cursor = db.cursor()
-            verification_code = serializer.dumps(email)
-            encrypted_password = sha256_crypt.hash(password)
-            insert_query = "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-            cursor.execute(
-                insert_query, (str(uuid.uuid4()), name, role, company, email, phone, encrypted_password, verification_code))
-            db.commit()
-            cursor.close()
+                send_email(email, verification_code)
 
-            send_email(email, verification_code)
-
-            return jsonify({'status': 'success', 'result': 'Verification email has been sent to your email'})
+                result = {'status': 'success',
+                          'result': 'Verification email has been sent to your email'}
 
         except mysql.connector.Error as err:
-            cursor.close()
             print(err)
 
-    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
+        finally:
+            cursor.close()
+
+    return jsonify(result)
 
 
 @app.route('/update_password', methods=['POST'])
 def update_password():
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
+
     if request.method == 'POST':
         response = request.get_json()
         email = response['email']
@@ -140,46 +154,58 @@ def update_password():
             query = "SELECT password FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
-
-            cursor.close()
+            db.commit()
 
             if user is not None:
                 stored_password = user[0]
 
                 if sha256_crypt.verify(old_password, stored_password):
                     encrypted_password = sha256_crypt.hash(new_password)
-                    cursor = db.cursor()
                     cursor.execute(
                         "UPDATE user_info SET password = %s WHERE email = %s", (encrypted_password, email))
                     db.commit()
-                    cursor.close()
-                    return jsonify({'status': 'success', 'result': 'Password updated successfully'})
+                    result = {'status': 'success',
+                              'result': 'Password updated successfully'}
                 else:
-                    return jsonify({'status': 'error', 'result': 'Wrong password entered'})
+                    result = {'status': 'error',
+                              'result': 'Wrong password entered'}
             else:
-                return jsonify({'status': 'error', 'result': 'Wrong email provided!'})
+                result = {'status': 'error', 'result': 'Wrong email provided!'}
 
         except mysql.connector.Error as err:
-            cursor.close()
             print(err)
 
-    return jsonify({'status': 'error', 'result': 'An error occurred while processing your request'})
+        finally:
+            cursor.close()
+
+    return jsonify(result)
 
 
 @app.route('/verify_email/<token>')
 def verify_email(token):
+    result = {}
+
     try:
         email = serializer.loads(token, max_age=3600)
+
+        cursor = db.cursor()
+        cursor.execute(
+            "UPDATE user_info SET verified = TRUE WHERE email = %s", (email,))
+        db.commit()
+
+        result = {'status': 'success', 'result': 'Email confirmed!'}
+
+    except mysql.connector.Error as err:
+        print(err)
+
     except SignatureExpired:
-        return jsonify({'status': 'error', 'result': 'The confirmation link is invalid or has expired'})
+        result = {'status': 'error',
+                  'result': 'The confirmation link is invalid or has expired'}
 
-    cursor = db.cursor()
-    cursor.execute(
-        "UPDATE user_info SET verified = TRUE WHERE email = %s", (email,))
-    db.commit()
-    cursor.close()
+    finally:
+        cursor.close()
 
-    return jsonify({'status': 'success', 'result': 'Email confirmed!'})
+    return jsonify(result)
 
 
 @app.route('/download_excel/<requestId>', methods=['GET'])
@@ -323,14 +349,18 @@ def get_customers():
         query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, createdAt FROM user_info WHERE role = 'customer'"
         cursor.execute(query)
         customers = cursor.fetchall()
-        cursor.close()
+        db.commit()
 
         result = [dict(zip([column[0] for column in cursor.description], row))
                   for row in customers]
 
         return jsonify(result)
+
     except Exception as e:
         return jsonify({'error': str(e)})
+
+    finally:
+        cursor.close()
 
 
 @app.route('/credits_history/<user_id>', methods=['GET'])
@@ -341,7 +371,7 @@ def get_credits_history(user_id):
         query = "SELECT userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate, createdAt FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
-        cursor.close()
+        db.commit()
 
         result = []
         for row in credits_history:
@@ -356,8 +386,12 @@ def get_credits_history(user_id):
             })
 
         return jsonify(result)
+
     except Exception as e:
         return jsonify({'error': str(e)})
+
+    finally:
+        cursor.close()
 
 
 @app.route('/dashboard_stats', methods=['GET'])
@@ -368,7 +402,7 @@ def get_dashboard_stats():
         query = "SELECT totalCustomers, totalCredits, usedCredits, totalInvoiceExtracted, totalAmount FROM dashboard_stats"
         cursor.execute(query)
         credits_history = cursor.fetchall()
-        cursor.close()
+        db.commit()
 
         result = []
         for row in credits_history:
@@ -381,46 +415,61 @@ def get_dashboard_stats():
             })
 
         return jsonify(result[0])
+
     except Exception as e:
         return jsonify({'error': str(e)})
+
+    finally:
+        cursor.close()
 
 
 @app.route('/add_credits', methods=['POST'])
 def add_credits():
+    result = {}
+
     try:
+        cursor = db.cursor()
+        start_time = time.time()
+
+        response = request.get_json()
+
+        while db.in_transaction:
+            if time.time() - start_time > 10:
+                raise Exception("Transaction is taking too long!")
+            time.sleep(0.1)
+
+        db.start_transaction()
+
         response = request.get_json()
         userId = response['userId']
         credits = int(response['credits'])
         addedBy = 'admin'
-        
+
         amountPaid = credits * int(os.getenv('CREDITS_VALUE'))
         paymentDate = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        cursor = db.cursor()
-        db.start_transaction()
-        
+
         query = "INSERT INTO credits(userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate) VALUES (%s, %s, %s, %s, %s, %s)"
-        cursor.execute(query, (userId, credits, amountPaid, 1, paymentDate, addedBy))
-        
+        cursor.execute(
+            query, (userId, credits, amountPaid, 1, addedBy, paymentDate))
+
         update_user_info = "UPDATE user_info SET availableCredits = availableCredits + %s, totalCredits = totalCredits + %s WHERE id = %s"
         cursor.execute(update_user_info, (credits, credits, userId))
 
-        update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE singleton_constant = 1"
+        update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE lockId = 1"
         cursor.execute(update_dashboard_stats, (credits, amountPaid))
+
         db.commit()
-        
-        return jsonify({'status': 'success', 'result': 'Credits added successfully'})
-    except Exception:
-        
-        if db is not None:
-            db.rollback()
-        return jsonify({'status': 'error', 'result': 'Failed to add credits'})
-    
+        result = {'status': 'success', 'result': 'Credits added successfully'}
+
+    except Exception as err:
+        print(err)
+        db.rollback()
+        result = {'status': 'error', 'result': 'Failed to add credits'}
+
     finally:
-        if cursor is not None:
-            cursor.close()
-        if db is not None:
-            db.close()
+        cursor.close()
+
+    return jsonify(result)
 
 
 if __name__ == '__main__':
