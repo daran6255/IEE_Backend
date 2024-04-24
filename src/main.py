@@ -10,6 +10,7 @@ from passlib.hash import sha256_crypt
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import mysql.connector
+from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 from iee_pipeline import IEEPipeline
@@ -384,20 +385,42 @@ def get_dashboard_stats():
         return jsonify({'error': str(e)})
 
 
-@app.route('/buy_credits/<user_id>', methods=['POST'])
-def buy_credits(user_id):
+@app.route('/add_credits', methods=['POST'])
+def add_credits():
     try:
         response = request.get_json()
-        credits = response['credits']
-
+        userId = response['userId']
+        credits = int(response['credits'])
+        addedBy = 'admin'
+        
+        amountPaid = credits * int(os.getenv('CREDITS_VALUE'))
+        paymentDate = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         cursor = db.cursor()
-        query = "INSERT INTO credits(userId, creditsBought, amountPaid, paymentStatus, paymentDate) VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(query, (user_id, credits))
+        db.start_transaction()
+        
+        query = "INSERT INTO credits(userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate) VALUES (%s, %s, %s, %s, %s, %s)"
+        cursor.execute(query, (userId, credits, amountPaid, 1, paymentDate, addedBy))
+        
+        update_user_info = "UPDATE user_info SET availableCredits = availableCredits + %s, totalCredits = totalCredits + %s WHERE id = %s"
+        cursor.execute(update_user_info, (credits, credits, userId))
+
+        update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE singleton_constant = 1"
+        cursor.execute(update_dashboard_stats, (credits, amountPaid))
         db.commit()
-        cursor.close()
-        return jsonify({''})
-    except Exception as e:
-        return jsonify({'error': str(e)})
+        
+        return jsonify({'status': 'success', 'result': 'Credits added successfully'})
+    except Exception:
+        
+        if db is not None:
+            db.rollback()
+        return jsonify({'status': 'error', 'result': 'Failed to add credits'})
+    
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if db is not None:
+            db.close()
 
 
 if __name__ == '__main__':

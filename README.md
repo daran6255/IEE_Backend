@@ -19,6 +19,9 @@ DB_USER = 'winvinaya_iee'
 DB_PASSWORD = 'password'
 DB_NAME = 'invoice_extraction'
 DB_PORT = 3306
+
+# Invoice variables
+CREDITS_VALUE = 2
 ```
 
 ## Notes
