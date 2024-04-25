@@ -13,6 +13,8 @@ from flask_cors import CORS
 import mysql.connector
 from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+
 
 from iee_pipeline import IEEPipeline
 from request_queue import RequestQueue
@@ -24,6 +26,9 @@ load_dotenv(override=True)
 app = Flask(__name__, static_folder='frontend/static',
             template_folder='frontend/templates')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+jwt = JWTManager(app)
 
 CORS(app)
 
@@ -72,10 +77,12 @@ def login():
                     result = {'status': 'error',
                               'result': 'Email verification not done'}
                 elif sha256_crypt.verify(password, stored_password):
+                    access_token = create_access_token(identity=email)
                     result = {'status': 'success',
                               'result': {
                                   'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
-                                  'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits
+                                  'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits,
+                                  'accessToken': access_token,
                               }}
                 else:
                     result = {'status': 'error',
@@ -138,49 +145,6 @@ def register():
     return jsonify(result)
 
 
-@app.route('/update_password', methods=['POST'])
-def update_password():
-    result = {'status': 'error',
-              'result': 'An error occurred while processing your request'}
-
-    if request.method == 'POST':
-        response = request.get_json()
-        email = response['email']
-        old_password = response['oldPassword']
-        new_password = response['newPassword']
-
-        try:
-            cursor = db.cursor()
-            query = "SELECT password FROM user_info WHERE email = %s"
-            cursor.execute(query, (email,))
-            user = cursor.fetchone()
-            db.commit()
-
-            if user is not None:
-                stored_password = user[0]
-
-                if sha256_crypt.verify(old_password, stored_password):
-                    encrypted_password = sha256_crypt.hash(new_password)
-                    cursor.execute(
-                        "UPDATE user_info SET password = %s WHERE email = %s", (encrypted_password, email))
-                    db.commit()
-                    result = {'status': 'success',
-                              'result': 'Password updated successfully'}
-                else:
-                    result = {'status': 'error',
-                              'result': 'Wrong password entered'}
-            else:
-                result = {'status': 'error', 'result': 'Wrong email provided!'}
-
-        except mysql.connector.Error as err:
-            print(err)
-
-        finally:
-            cursor.close()
-
-    return jsonify(result)
-
-
 @app.route('/verify_email/<token>')
 def verify_email(token):
     result = {}
@@ -208,8 +172,62 @@ def verify_email(token):
     return jsonify(result)
 
 
+@app.route('/update_password', methods=['POST'])
+@jwt_required()
+def update_password():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
+
+    if request.method == 'POST':
+        response = request.get_json()
+        old_password = response['oldPassword']
+        new_password = response['newPassword']
+
+        try:
+            cursor = db.cursor()
+            query = "SELECT password FROM user_info WHERE email = %s"
+            cursor.execute(query, (current_user,))
+            user = cursor.fetchone()
+            db.commit()
+
+            if user is not None:
+                stored_password = user[0]
+
+                if sha256_crypt.verify(old_password, stored_password):
+                    encrypted_password = sha256_crypt.hash(new_password)
+                    cursor.execute(
+                        "UPDATE user_info SET password = %s WHERE email = %s", (encrypted_password, current_user))
+                    db.commit()
+                    result = {'status': 'success',
+                              'result': 'Password updated successfully'}
+                else:
+                    result = {'status': 'error',
+                              'result': 'Wrong password entered'}
+            else:
+                result = {'status': 'error', 'result': 'User not found!'}
+
+        except mysql.connector.Error as err:
+            print(err)
+
+        finally:
+            cursor.close()
+
+    return jsonify(result)
+
+
 @app.route('/download_excel/<requestId>', methods=['GET'])
+@jwt_required()
 def download_excel(requestId):
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
     data = request_queue.get(requestId)
 
     if data:
@@ -261,7 +279,13 @@ def download_excel(requestId):
 
 
 @app.route('/download_json/<requestId>', methods=['GET'])
+@jwt_required()
 def download_json(requestId):
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
     data = request_queue.get(requestId)
 
     if data:
@@ -275,7 +299,13 @@ def download_json(requestId):
 
 
 @app.route('/process_invoice', methods=['POST'])
+@jwt_required()
 def process_invoice():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
     if 'files[]' not in request.files:
         return jsonify({'Error': 'No file provided'})
 
@@ -343,7 +373,13 @@ def process_invoice():
 
 
 @app.route('/get_customers', methods=['GET'])
+@jwt_required()
 def get_customers():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
     try:
         cursor = db.cursor()
         query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, createdAt FROM user_info WHERE role = 'customer'"
@@ -364,7 +400,12 @@ def get_customers():
 
 
 @app.route('/credits_history/<user_id>', methods=['GET'])
+@jwt_required()
 def get_credits_history(user_id):
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
 
     try:
         cursor = db.cursor()
@@ -395,7 +436,12 @@ def get_credits_history(user_id):
 
 
 @app.route('/dashboard_stats', methods=['GET'])
+@jwt_required()
 def get_dashboard_stats():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
 
     try:
         cursor = db.cursor()
@@ -424,7 +470,13 @@ def get_dashboard_stats():
 
 
 @app.route('/add_credits', methods=['POST'])
+@jwt_required()
 def add_credits():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
     result = {}
 
     try:
