@@ -188,13 +188,13 @@ def get_customer_data():
 
     try:
         cursor = db.cursor()
-        query = "SELECT availableCredits, totalCredits FROM user_info WHERE role = 'customer' and email = %s"
+        query = "SELECT availableCredits, totalCredits, totalAmount FROM user_info WHERE role = 'customer' and email = %s"
         cursor.execute(query, (current_user,))
         user = cursor.fetchone()
         db.commit()
 
         if user is not None:
-            availableCredits, totalCredits = user
+            availableCredits, totalCredits, totalAmount = user
 
             result = {'status': 'success',
                       'result': {
@@ -202,7 +202,8 @@ def get_customer_data():
                           'totalCredits': totalCredits,
                           'usedCredits': totalCredits - availableCredits,
                           'invoiceExtracted': (totalCredits - availableCredits) / credits_per_page,
-                          'remainingInvoices': availableCredits / credits_per_page
+                          'remainingInvoices': availableCredits / credits_per_page,
+                          'totalAmount': totalAmount,
                       }}
         else:
             result = {'status': 'error',
@@ -466,7 +467,7 @@ def get_customers():
 
     try:
         cursor = db.cursor()
-        query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, createdAt FROM user_info WHERE role = 'customer'"
+        query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, totalAmount, createdAt FROM user_info WHERE role = 'customer'"
         cursor.execute(query)
         customers = cursor.fetchall()
         db.commit()
@@ -588,8 +589,8 @@ def add_credits():
         cursor.execute(
             query, (userId, credits, amountPaid, 1, addedBy, paymentDate))
 
-        update_user_info = "UPDATE user_info SET availableCredits = availableCredits + %s, totalCredits = totalCredits + %s WHERE id = %s"
-        cursor.execute(update_user_info, (credits, credits, userId))
+        update_user_info = "UPDATE user_info SET availableCredits = availableCredits + %s, totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE id = %s"
+        cursor.execute(update_user_info, (credits, credits, amountPaid, userId))
 
         update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE lockId = 1"
         cursor.execute(update_dashboard_stats, (credits, amountPaid))

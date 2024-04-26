@@ -20,6 +20,7 @@ CREATE TABLE user_info (
     verified BOOLEAN DEFAULT 0,
     availableCredits INT DEFAULT 0,
     totalCredits INT DEFAULT 0,
+    totalAmount DECIMAL(10, 2) DEFAULT 0.00,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

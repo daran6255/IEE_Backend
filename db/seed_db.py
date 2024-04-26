@@ -21,11 +21,11 @@ cursor = db.cursor()
 
 users = [
     (str(uuid.uuid4()), "user1", "customer", "ABC", "demo1@example.com",
-     "1234567890", sha256_crypt.hash("pass123"), "1dfdh456456", True, 250, 900),
+     "1234567890", sha256_crypt.hash("pass123"), "1dfdh456456", True, 250, 900, 1800.00),
     (str(uuid.uuid4()), "user2", "customer", "XYZ", "demo2@example.com",
-     "9876543210", sha256_crypt.hash("pass456"), "1dfgsghjyjytj", True, 120, 920),
+     "9876543210", sha256_crypt.hash("pass456"), "1dfgsghjyjytj", True, 120, 920, 1840.00),
     (str(uuid.uuid4()), "user3", "customer", "taydens", "demo3@example.com",
-     "7603903469", sha256_crypt.hash("pass789"), "1435353fhtrjrtjrt", True, 210, 730)
+     "7603903469", sha256_crypt.hash("pass789"), "1435353fhtrjrtjrt", True, 210, 730, 1460.00)
 ]
 
 credits = [
@@ -69,7 +69,7 @@ print('Admin account added.')
 
 for i in range(len(users)):
     cursor.execute(
-        "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits, totalCredits) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", users[i])
+        "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode, verified, availableCredits, totalCredits, totalAmount) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", users[i])
 
     user_id = users[i][0]
 
