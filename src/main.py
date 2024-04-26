@@ -36,6 +36,7 @@ CORS(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 tags_file = r'data/tags.json'
+credits_per_page = int(os.getenv('CREDITS_PER_PAGE'))
 
 iee_pipeline = IEEPipeline()
 request_queue = RequestQueue(size_limit=20)
@@ -66,13 +67,13 @@ def login():
 
         try:
             cursor = db.cursor()
-            query = "SELECT id, name, role, company, email, phone, password, availableCredits, totalCredits, verified FROM user_info WHERE email = %s"
+            query = "SELECT id, name, role, company, email, phone, password, verified FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
             db.commit()
 
             if user is not None:
-                id, name, role, company, email, phone, stored_password, availableCredits, totalCredits, verified = user
+                id, name, role, company, email, phone, stored_password, verified = user
 
                 if not verified:
                     result = {'status': 'error',
@@ -84,8 +85,7 @@ def login():
                     result = {'status': 'success',
                               'result': {
                                   'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
-                                  'phone': phone, 'creditsavailable': availableCredits, 'totalcredits': totalCredits,
-                                  'accessToken': access_token,
+                                  'phone': phone, 'accessToken': access_token,
                               }}
                 else:
                     result = {'status': 'error',
@@ -168,6 +168,48 @@ def verify_email(token):
     except SignatureExpired:
         result = {'status': 'error',
                   'result': 'The confirmation link is invalid or has expired'}
+
+    finally:
+        cursor.close()
+
+    return jsonify(result)
+
+
+@app.route('/get_customer_data', methods=['GET'])
+@jwt_required()
+def get_customer_data():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({'status': 'error', 'result': 'User not authorized'})
+
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
+
+    try:
+        cursor = db.cursor()
+        query = "SELECT availableCredits, totalCredits FROM user_info WHERE role = 'customer' and email = %s"
+        cursor.execute(query, (current_user,))
+        user = cursor.fetchone()
+        db.commit()
+
+        if user is not None:
+            availableCredits, totalCredits = user
+
+            result = {'status': 'success',
+                      'result': {
+                          'availableCredits': availableCredits,
+                          'totalCredits': totalCredits,
+                          'usedCredits': totalCredits - availableCredits,
+                          'invoiceExtracted': (totalCredits - availableCredits) / credits_per_page,
+                          'remainingInvoices': availableCredits / credits_per_page
+                      }}
+        else:
+            result = {'status': 'error',
+                      'result': 'Email not found. Please register'}
+
+    except mysql.connector.Error as err:
+        print(err)
 
     finally:
         cursor.close()
@@ -324,7 +366,6 @@ def process_invoice():
 
         if user is not None:
             availableCredits = int(user[0])
-            credits_per_page = int(os.getenv('CREDITS_PER_PAGE'))
             files = request.files.getlist('files[]')
 
             if (availableCredits >= credits_per_page) and (availableCredits / credits_per_page) >= len(files):
@@ -401,7 +442,7 @@ def process_invoice():
                     db.commit()
 
                     result = {'status': 'success', 'result': {
-                        'requestId': requestId, 'availableCredits': availableCredits, 'output': api_result}}
+                        'requestId': requestId, 'output': api_result}}
             else:
                 result = {'status': 'error',
                           'result': 'Not enough credits to process invoices'}
