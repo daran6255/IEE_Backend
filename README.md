@@ -22,6 +22,7 @@ DB_PORT = 3306
 
 # Invoice variables
 CREDITS_VALUE = 2
+CREDITS_PER_PAGE = 5
 ```
 
 ## Notes

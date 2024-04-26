@@ -12,6 +12,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import mysql.connector
 from datetime import datetime
+from datetime import timedelta
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
@@ -77,7 +78,9 @@ def login():
                     result = {'status': 'error',
                               'result': 'Email verification not done'}
                 elif sha256_crypt.verify(password, stored_password):
-                    access_token = create_access_token(identity=email)
+                    expires = timedelta(days=1)
+                    access_token = create_access_token(
+                        identity=email, expires_delta=expires)
                     result = {'status': 'success',
                               'result': {
                                   'id': id, 'name': name, 'role': role, 'company': company, 'email': email,
@@ -309,67 +312,107 @@ def process_invoice():
     if 'files[]' not in request.files:
         return jsonify({'Error': 'No file provided'})
 
-    files = request.files.getlist('files[]')
-    entities_extracted = []
-    api_result = []
+    result = {'status': 'error',
+              'result': 'An error occurred while processing your request'}
 
-    for file in files:
-        if file.filename == '':
-            continue
+    try:
+        cursor = db.cursor()
+        query = "SELECT availableCredits FROM user_info WHERE email = %s"
+        cursor.execute(query, (current_user,))
+        user = cursor.fetchone()
+        db.commit()
 
-        if file:
-            random_filename = ''.join(random.choices(
-                string.ascii_letters + string.digits, k=10))
-            file_ext = os.path.splitext(file.filename)[1]
-            filename = random_filename + file_ext
-            filepath = os.path.join(TEMP_DIR, filename)
-            input_file = os.path.abspath(filepath)
-            file.save(input_file)
+        if user is not None:
+            availableCredits = int(user[0])
+            credits_per_page = int(os.getenv('CREDITS_PER_PAGE'))
+            files = request.files.getlist('files[]')
 
-            if file_ext == ".jpg" or file_ext == ".jpeg":
-                pp_output_path = iee_pipeline.image_preprocessing(input_file)
-                ocr_output = iee_pipeline.extract_text(pp_output_path)
-                pp_txt_ouput = iee_pipeline.text_preprocessing(ocr_output)
-                entities_output = iee_pipeline.extract_entities(pp_txt_ouput)
-                items_output = iee_pipeline.extract_table_items(input_file)
+            if (availableCredits >= credits_per_page) and (availableCredits / credits_per_page) >= len(files):
+                entities_extracted = []
+                api_result = []
 
-                mapped_headings = iee_pipeline.table_extractor.map_table_columns(
-                    table=items_output, ner_output=entities_output)
+                for file in files:
+                    if file.filename == '':
+                        continue
 
-                # Get table items for mapped headings
-                if mapped_headings:
-                    indices = {k: items_output[0].index(v) for k, v in mapped_headings.items(
-                    ) if v is not None and v != "N.E.R.Default"}
+                    if file:
+                        random_filename = ''.join(random.choices(
+                            string.ascii_letters + string.digits, k=10))
+                        file_ext = os.path.splitext(file.filename)[1]
+                        filename = random_filename + file_ext
+                        filepath = os.path.join(TEMP_DIR, filename)
+                        input_file = os.path.abspath(filepath)
+                        file.save(input_file)
 
-                    for k, idx in indices.items():
-                        entities_output[k] = [row[idx]
-                                              for row in items_output[1:]]
+                        if file_ext == ".jpg" or file_ext == ".jpeg":
+                            pp_output_path = iee_pipeline.image_preprocessing(
+                                input_file)
+                            ocr_output = iee_pipeline.extract_text(
+                                pp_output_path)
+                            pp_txt_ouput = iee_pipeline.text_preprocessing(
+                                ocr_output)
+                            entities_output = iee_pipeline.extract_entities(
+                                pp_txt_ouput)
+                            items_output = iee_pipeline.extract_table_items(
+                                input_file)
 
-                # Add items to output
-                entities_output['items'] = items_output
+                            mapped_headings = iee_pipeline.table_extractor.map_table_columns(
+                                table=items_output, ner_output=entities_output)
 
-                # Remove item entities only for api
-                items_tags = ['ITEMNAME', 'HSN', 'QUANTITY',
-                              'UNIT', 'PRICE', 'AMOUNT']
-                final_result = {key: entities_output[key]
-                                for key in entities_output if key not in items_tags}
+                            # Get table items for mapped headings
+                            if mapped_headings:
+                                indices = {k: items_output[0].index(v) for k, v in mapped_headings.items(
+                                ) if v is not None and v != "N.E.R.Default"}
 
-                if entities_output:
-                    entities_extracted.append(
-                        {'filename': file.filename, 'entities': entities_output})
-                    api_result.append(
-                        {'filename': file.filename, 'entities': final_result})
+                                for k, idx in indices.items():
+                                    entities_output[k] = [row[idx]
+                                                          for row in items_output[1:]]
 
+                            # Add items to output
+                            entities_output['items'] = items_output
+
+                            # Remove item entities only for api
+                            items_tags = ['ITEMNAME', 'HSN', 'QUANTITY',
+                                          'UNIT', 'PRICE', 'AMOUNT']
+                            final_result = {key: entities_output[key]
+                                            for key in entities_output if key not in items_tags}
+
+                            if entities_output:
+                                entities_extracted.append(
+                                    {'filename': file.filename, 'entities': entities_output})
+                                api_result.append(
+                                    {'filename': file.filename, 'entities': final_result})
+
+                        else:
+                            continue
+
+                if entities_extracted:
+                    requestId = str(uuid.uuid4())
+                    request_queue[requestId] = entities_extracted
+                    totalCreditsUsed = (len(files) * credits_per_page)
+                    availableCredits -= totalCreditsUsed
+
+                    query = "UPDATE user_info SET availableCredits = %s WHERE email = %s"
+                    cursor.execute(query, (availableCredits, current_user))
+
+                    query = "UPDATE dashboard_stats SET usedCredits = usedCredits + %s, totalInvoiceExtracted = totalInvoiceExtracted + %s WHERE lockId = 1"
+                    cursor.execute(query, (totalCreditsUsed, len(files)))
+
+                    db.commit()
+
+                    result = {'status': 'success', 'result': {
+                        'requestId': requestId, 'availableCredits': availableCredits, 'output': api_result}}
             else:
-                continue
+                result = {'status': 'error',
+                          'result': 'Not enough credits to process invoices'}
 
-    if entities_extracted:
-        requestId = str(uuid.uuid4())
-        request_queue[requestId] = entities_extracted
+    except Exception as err:
+        print(err)
 
-        return jsonify({'requestId': requestId, 'result': api_result})
+    finally:
+        cursor.close()
 
-    return jsonify({'Error': 'No output extracted'})
+    return jsonify(result)
 
 
 @app.route('/get_customers', methods=['GET'])
