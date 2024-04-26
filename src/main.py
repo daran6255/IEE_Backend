@@ -37,6 +37,7 @@ serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 tags_file = r'data/tags.json'
 credits_per_page = int(os.getenv('CREDITS_PER_PAGE'))
+credits_value = int(os.getenv('CREDITS_VALUE'))
 
 iee_pipeline = IEEPipeline()
 request_queue = RequestQueue(size_limit=20)
@@ -53,6 +54,41 @@ db = mysql.connector.connect(
     password=os.getenv('DB_PASSWORD'),
     database=os.getenv('DB_NAME')
 )
+
+
+def init_db():
+    try:
+        cursor = db.cursor()
+        query = """
+            WITH customer_data AS (
+                SELECT COUNT(*) AS totalCustomers,
+                        SUM(availableCredits) AS totalAvailableCredits
+                FROM user_info
+                WHERE role = 'customer'
+            ),
+            credit_data AS (
+                SELECT SUM(creditsBought) AS totalCredits,
+                        SUM(amountPaid) AS totalAmount
+                FROM credits
+            ),
+            used_credits AS (
+                SELECT (credit_data.totalCredits - customer_data.totalAvailableCredits) AS usedCredits
+                FROM customer_data, credit_data
+            )
+            UPDATE dashboard_stats
+            SET totalCustomers = (SELECT totalCustomers FROM customer_data),
+                totalCredits = (SELECT totalCredits FROM credit_data),
+                usedCredits = (SELECT usedCredits FROM used_credits),
+                totalInvoiceExtracted = (SELECT usedCredits / %s FROM used_credits),
+                totalAmount = (SELECT totalAmount FROM credit_data)
+            WHERE lockId = 1;
+            """
+        cursor.execute(query, (credits_per_page,))
+        db.commit()
+    except mysql.connector.Error as err:
+        print(err)
+    finally:
+        cursor.close()
 
 
 @app.route('/login', methods=['POST'])
@@ -582,7 +618,7 @@ def add_credits():
         credits = int(response['credits'])
         addedBy = 'admin'
 
-        amountPaid = credits * int(os.getenv('CREDITS_VALUE'))
+        amountPaid = credits * credits_value
         paymentDate = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         query = "INSERT INTO credits(userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate) VALUES (%s, %s, %s, %s, %s, %s)"
@@ -590,7 +626,8 @@ def add_credits():
             query, (userId, credits, amountPaid, 1, addedBy, paymentDate))
 
         update_user_info = "UPDATE user_info SET availableCredits = availableCredits + %s, totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE id = %s"
-        cursor.execute(update_user_info, (credits, credits, amountPaid, userId))
+        cursor.execute(update_user_info,
+                       (credits, credits, amountPaid, userId))
 
         update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE lockId = 1"
         cursor.execute(update_dashboard_stats, (credits, amountPaid))
@@ -610,6 +647,8 @@ def add_credits():
 
 
 if __name__ == '__main__':
+    init_db()
+
     if os.getenv('ENV') == 'prod':
         app.run(host='0.0.0.0', port=5000)
     else:
