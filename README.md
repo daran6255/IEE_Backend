@@ -41,3 +41,15 @@ Run the setup
 chmod +x setup.sh
 sudo -E ./setup.sh
 ```
+
+## Check ufw status
+
+```
+sudo ufw app list
+sudo ufw allow 'Nginx HTTP'
+```
+
+### Reference
+
+1. https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04
+2. https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04
