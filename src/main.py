@@ -65,6 +65,7 @@ def login():
         response = request.get_json()
         email = response['email']
         password = response['password']
+        cursor = None
 
         try:
             cursor = db.cursor()
@@ -98,7 +99,8 @@ def login():
         except mysql.connector.Error as err:
             print(err)
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
 
     return jsonify(result)
 
@@ -116,6 +118,7 @@ def register():
         email = response['email']
         phone = response['phone']
         password = response['password']
+        cursor = None
 
         try:
             cursor = db.cursor()
@@ -144,7 +147,8 @@ def register():
             print(err)
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
 
     return jsonify(result)
 
@@ -152,6 +156,7 @@ def register():
 @app.route('/verify_email/<token>')
 def verify_email(token):
     result = {}
+    cursor = None
 
     try:
         email = serializer.loads(token, max_age=3600)
@@ -171,7 +176,8 @@ def verify_email(token):
                   'result': 'The confirmation link is invalid or has expired'}
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
     return jsonify(result)
 
@@ -186,6 +192,7 @@ def get_customer_data():
 
     result = {'status': 'error',
               'result': 'An error occurred while processing your request'}
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -214,7 +221,8 @@ def get_customer_data():
         print(err)
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
     return jsonify(result)
 
@@ -234,6 +242,7 @@ def update_password():
         response = request.get_json()
         old_password = response['oldPassword']
         new_password = response['newPassword']
+        cursor = None
 
         try:
             cursor = db.cursor()
@@ -262,7 +271,8 @@ def update_password():
             print(err)
 
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
 
     return jsonify(result)
 
@@ -358,6 +368,7 @@ def process_invoice():
 
     result = {'status': 'error',
               'result': 'An error occurred while processing your request'}
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -460,7 +471,8 @@ def process_invoice():
         print(err)
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
     return jsonify(result)
 
@@ -472,6 +484,8 @@ def get_customers():
 
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
+
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -489,7 +503,8 @@ def get_customers():
         return jsonify({'error': str(e)})
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
 
 @app.route('/credits_history/<user_id>', methods=['GET'])
@@ -499,6 +514,8 @@ def get_credits_history(user_id):
 
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
+
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -525,7 +542,8 @@ def get_credits_history(user_id):
         return jsonify({'error': str(e)})
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
 
 @app.route('/dashboard_stats', methods=['GET'])
@@ -535,6 +553,8 @@ def get_dashboard_stats():
 
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
+
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -586,7 +606,8 @@ def get_dashboard_stats():
         return jsonify({'error': str(e)})
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
 
 @app.route('/add_credits', methods=['POST'])
@@ -598,6 +619,7 @@ def add_credits():
         return jsonify({'status': 'error', 'result': 'User not authorized'})
 
     result = {}
+    cursor = None
 
     try:
         cursor = db.cursor()
@@ -640,7 +662,8 @@ def add_credits():
         result = {'status': 'error', 'result': 'Failed to add credits'}
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
     return jsonify(result)
 
