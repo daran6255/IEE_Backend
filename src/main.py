@@ -408,6 +408,7 @@ def process_invoice():
             if (availableCredits >= credits_per_page) and (availableCredits / credits_per_page) >= len(files):
                 entities_extracted = []
                 api_result = []
+                successful_extraction = 0
 
                 for file in files:
                     if file.filename == '':
@@ -446,6 +447,9 @@ def process_invoice():
                                     entities_output[k] = [row[idx]
                                                           for row in items_output[1:]]
 
+                            if len(entities_output) > 0:
+                                successful_extraction += 1
+
                             # Add items to output
                             entities_output['items'] = items_output
 
@@ -464,17 +468,20 @@ def process_invoice():
                         else:
                             continue
 
-                if entities_extracted:
+                if len(entities_extracted) > 0:
                     requestId = str(uuid.uuid4())
                     request_queue[requestId] = entities_extracted
-                    totalCreditsUsed = (len(files) * credits_per_page)
+
+                    totalCreditsUsed = (
+                        successful_extraction * credits_per_page)
                     availableCredits -= totalCreditsUsed
 
                     query = "UPDATE user_info SET availableCredits = %s WHERE email = %s"
                     cursor.execute(query, (availableCredits, current_user))
 
                     query = "UPDATE dashboard_stats SET usedCredits = usedCredits + %s, totalInvoiceExtracted = totalInvoiceExtracted + %s WHERE lockId = 1"
-                    cursor.execute(query, (totalCreditsUsed, len(files)))
+                    cursor.execute(
+                        query, (totalCreditsUsed, successful_extraction))
 
                     db.commit()
 
