@@ -47,13 +47,17 @@ if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
 
 # Connect to MySQL
-db = mysql.connector.connect(
-    host=os.getenv('DB_HOST'),
-    port=os.getenv('DB_PORT'),
-    user=os.getenv('DB_USER'),
-    password=os.getenv('DB_PASSWORD'),
-    database=os.getenv('DB_NAME')
-)
+dbconfig = {
+    "host": os.getenv('DB_HOST'),
+    "port": os.getenv('DB_PORT'),
+    "user": os.getenv('DB_USER'),
+    "password": os.getenv('DB_PASSWORD'),
+    "database": os.getenv('DB_NAME'),
+}
+
+cnxpool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
+                                                      pool_size=32,
+                                                      **dbconfig)
 
 
 @app.route('/login', methods=['POST'])
@@ -65,14 +69,17 @@ def login():
         response = request.get_json()
         email = response['email']
         password = response['password']
+
+        cnx = None
         cursor = None
 
         try:
-            cursor = db.cursor()
+            cnx = cnxpool.get_connection()
+            cursor = cnx.cursor()
             query = "SELECT id, name, role, company, email, phone, password, verified FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
-            db.commit()
+            cnx.commit()
 
             if user is not None:
                 id, name, role, company, email, phone, stored_password, verified = user
@@ -101,6 +108,8 @@ def login():
         finally:
             if cursor is not None:
                 cursor.close()
+            if cnx is not None:
+                cnx.close()
 
     return jsonify(result)
 
@@ -118,14 +127,17 @@ def register():
         email = response['email']
         phone = response['phone']
         password = response['password']
+
+        cnx = None
         cursor = None
 
         try:
-            cursor = db.cursor()
+            cnx = cnxpool.get_connection()
+            cursor = cnx.cursor()
             query = "SELECT * FROM user_info WHERE email = %s"
             cursor.execute(query, (email,))
             user = cursor.fetchone()
-            db.commit()
+            cnx.commit()
 
             if user:
                 result = {'status': 'error',
@@ -136,7 +148,7 @@ def register():
                 insert_query = "INSERT INTO user_info (id, name, role, company, email, phone, password, verificationCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor.execute(
                     insert_query, (str(uuid.uuid4()), name, role, company, email, phone, encrypted_password, verification_code))
-                db.commit()
+                cnx.commit()
 
                 send_email(email, verification_code)
 
@@ -149,6 +161,8 @@ def register():
         finally:
             if cursor is not None:
                 cursor.close()
+            if cnx is not None:
+                cnx.close()
 
     return jsonify(result)
 
@@ -156,15 +170,17 @@ def register():
 @app.route('/verify_email/<token>')
 def verify_email(token):
     result = {}
+    cnx = None
     cursor = None
 
     try:
         email = serializer.loads(token, max_age=3600)
 
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         cursor.execute(
             "UPDATE user_info SET verified = TRUE WHERE email = %s", (email,))
-        db.commit()
+        cnx.commit()
 
         result = {'status': 'success', 'result': 'Email confirmed!'}
 
@@ -178,6 +194,8 @@ def verify_email(token):
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
     return jsonify(result)
 
@@ -192,14 +210,16 @@ def get_customer_data():
 
     result = {'status': 'error',
               'result': 'An error occurred while processing your request'}
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         query = "SELECT availableCredits, totalCredits, totalAmount FROM user_info WHERE role = 'customer' and email = %s"
         cursor.execute(query, (current_user,))
         user = cursor.fetchone()
-        db.commit()
+        cnx.commit()
 
         if user is not None:
             availableCredits, totalCredits, totalAmount = user
@@ -223,6 +243,8 @@ def get_customer_data():
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
     return jsonify(result)
 
@@ -242,14 +264,17 @@ def update_password():
         response = request.get_json()
         old_password = response['oldPassword']
         new_password = response['newPassword']
+
+        cnx = None
         cursor = None
 
         try:
-            cursor = db.cursor()
+            cnx = cnxpool.get_connection()
+            cursor = cnx.cursor()
             query = "SELECT password FROM user_info WHERE email = %s"
             cursor.execute(query, (current_user,))
             user = cursor.fetchone()
-            db.commit()
+            cnx.commit()
 
             if user is not None:
                 stored_password = user[0]
@@ -258,7 +283,7 @@ def update_password():
                     encrypted_password = sha256_crypt.hash(new_password)
                     cursor.execute(
                         "UPDATE user_info SET password = %s WHERE email = %s", (encrypted_password, current_user))
-                    db.commit()
+                    cnx.commit()
                     result = {'status': 'success',
                               'result': 'Password updated successfully'}
                 else:
@@ -273,6 +298,8 @@ def update_password():
         finally:
             if cursor is not None:
                 cursor.close()
+            if cnx is not None:
+                cnx.close()
 
     return jsonify(result)
 
@@ -368,14 +395,16 @@ def process_invoice():
 
     result = {'status': 'error',
               'result': 'An error occurred while processing your request'}
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         query = "SELECT availableCredits FROM user_info WHERE email = %s"
         cursor.execute(query, (current_user,))
         user = cursor.fetchone()
-        db.commit()
+        cnx.commit()
 
         if user is not None:
             availableCredits = int(user[0])
@@ -459,7 +488,7 @@ def process_invoice():
                     cursor.execute(
                         query, (totalCreditsUsed, successful_extraction))
 
-                    db.commit()
+                    cnx.commit()
 
                     result = {'status': 'success', 'result': {
                         'requestId': requestId, 'output': api_result}}
@@ -473,6 +502,8 @@ def process_invoice():
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
     return jsonify(result)
 
@@ -485,14 +516,16 @@ def get_customers():
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
 
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         query = "SELECT id, name, company, email, phone, verified, availableCredits, totalCredits, totalAmount, createdAt FROM user_info WHERE role = 'customer'"
         cursor.execute(query)
         customers = cursor.fetchall()
-        db.commit()
+        cnx.commit()
 
         result = [dict(zip([column[0] for column in cursor.description], row))
                   for row in customers]
@@ -505,6 +538,8 @@ def get_customers():
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
 
 @app.route('/credits_history/<user_id>', methods=['GET'])
@@ -515,14 +550,16 @@ def get_credits_history(user_id):
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
 
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         query = "SELECT userId, creditsBought, amountPaid, paymentStatus, addedBy, paymentDate, createdAt FROM credits WHERE userId = %s"
         cursor.execute(query, (user_id,))
         credits_history = cursor.fetchall()
-        db.commit()
+        cnx.commit()
 
         result = []
         for row in credits_history:
@@ -544,6 +581,8 @@ def get_credits_history(user_id):
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
 
 @app.route('/dashboard_stats', methods=['GET'])
@@ -554,10 +593,12 @@ def get_dashboard_stats():
     if current_user is None:
         return jsonify({'status': 'error', 'result': 'User not authorized'})
 
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor(dictionary=True)
         query = """
             WITH customer_data AS (
                 SELECT COUNT(*) AS totalCustomers,
@@ -583,24 +624,14 @@ def get_dashboard_stats():
             WHERE lockId = 1;
             """
         cursor.execute(query, (credits_per_page,))
-        db.commit()
+        cnx.commit()
 
         query = "SELECT totalCustomers, totalCredits, usedCredits, totalInvoiceExtracted, totalAmount FROM dashboard_stats WHERE lockId = 1"
         cursor.execute(query)
         credits_history = cursor.fetchone()
-        db.commit()
+        cnx.commit()
 
-        result = []
-        for row in credits_history:
-            result.append({
-                'totalCustomers': row[0],
-                'totalCredits': float(row[1]),
-                'usedCredits': row[2],
-                'totalInvoiceExtracted': row[3],
-                'totalAmount': str(row[4]) if row[4] is not None else None
-            })
-
-        return jsonify(result[0])
+        return jsonify(credits_history)
 
     except Exception as e:
         return jsonify({'error': str(e)})
@@ -608,6 +639,8 @@ def get_dashboard_stats():
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
 
 @app.route('/add_credits', methods=['POST'])
@@ -619,20 +652,22 @@ def add_credits():
         return jsonify({'status': 'error', 'result': 'User not authorized'})
 
     result = {}
+    cnx = None
     cursor = None
 
     try:
-        cursor = db.cursor()
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
         start_time = time.time()
 
         response = request.get_json()
 
-        while db.in_transaction:
+        while cnx.in_transaction:
             if time.time() - start_time > 10:
                 raise Exception("Transaction is taking too long!")
             time.sleep(0.1)
 
-        db.start_transaction()
+        cnx.start_transaction()
 
         response = request.get_json()
         userId = response['userId']
@@ -653,17 +688,19 @@ def add_credits():
         update_dashboard_stats = "UPDATE dashboard_stats SET totalCredits = totalCredits + %s, totalAmount = totalAmount + %s WHERE lockId = 1"
         cursor.execute(update_dashboard_stats, (credits, amountPaid))
 
-        db.commit()
+        cnx.commit()
         result = {'status': 'success', 'result': 'Credits added successfully'}
 
     except Exception as err:
         print(err)
-        db.rollback()
+        cnx.rollback()
         result = {'status': 'error', 'result': 'Failed to add credits'}
 
     finally:
         if cursor is not None:
             cursor.close()
+        if cnx is not None:
+            cnx.close()
 
     return jsonify(result)
 
