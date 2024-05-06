@@ -33,6 +33,11 @@ DB_PORT = 3306
 # Invoice variables
 CREDITS_VALUE = 2
 CREDITS_PER_PAGE = 5
+
+# AWS Credentials
+AWS_ACCESS_KEY_ID='ABCDEF123456'
+AWS_ACCESS_KEY='fas5446DSF456Ffds456'
+AWS_REGION='us-east-1'
 ```
 
 Run the setup
