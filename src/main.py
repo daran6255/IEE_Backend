@@ -24,8 +24,7 @@ from utility import send_email
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 load_dotenv(override=True)
 
-app = Flask(__name__, static_folder='frontend/static',
-            template_folder='frontend/templates')
+app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY')
 
