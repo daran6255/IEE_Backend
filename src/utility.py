@@ -32,7 +32,7 @@ def rescale_bboxes(out_bbox, size):
     return b
 
 
-def outputs_to_objects(outputs, img_size, id2label):
+def outputs_to_objects(outputs, img_size, id2label, crop_origin=None):
     m = outputs.logits.softmax(-1).max(-1)
     pred_labels = list(m.indices.detach().cpu().numpy())[0]
     pred_scores = list(m.values.detach().cpu().numpy())[0]
@@ -44,6 +44,10 @@ def outputs_to_objects(outputs, img_size, id2label):
     for label, score, bbox in zip(pred_labels, pred_scores, pred_bboxes):
         class_label = id2label[int(label)]
         if not class_label == 'no object':
+            if crop_origin is not None:
+                # Convert the coordinates to be relative to the original image
+                bbox = [bbox[0] + crop_origin[0], bbox[1] + crop_origin[1],
+                        bbox[2] + crop_origin[0], bbox[3] + crop_origin[1]]
             objects.append({'label': class_label, 'score': float(score),
                             'bbox': [float(elem) for elem in bbox]})
 
@@ -79,6 +83,7 @@ def objects_to_crops(img, tokens, objects, class_thresholds, padding=10):
 
         cropped_table['image'] = cropped_img
         cropped_table['tokens'] = table_tokens
+        cropped_table['origin'] = (bbox[0], bbox[1])
 
         table_crops.append(cropped_table)
 
@@ -141,3 +146,11 @@ def send_email(user_email, token):
     del msg
 
     smtplibObj.quit()
+
+
+def convert_to_pixels(box, image_width, image_height):
+    left = box['Left'] * image_width
+    top = box['Top'] * image_height
+    right = (box['Left'] + box['Width']) * image_width
+    bottom = (box['Top'] + box['Height']) * image_height
+    return {'Left': left, 'Top': top, 'Right': right, 'Bottom': bottom}

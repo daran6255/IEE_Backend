@@ -21,7 +21,7 @@ class TextExtractor:
 
     def _use_tesseract(self, img_path):
         custom_config = r'--oem 3 --psm 6'
-        return pytesseract.image_to_string(
+        return {}, pytesseract.image_to_string(
             Image.open(img_path), config=custom_config)
 
     def _use_textract(self, img_path):
@@ -44,21 +44,18 @@ class TextExtractor:
             if item['BlockType'] == 'LINE':
                 text += item.get('Text', '') + ' '
 
-        return text
+        return response, text
 
     def extract_text_from_image(self, img_path):
         extracted_text = ""
+        response = {}
 
         try:
-            if isProd:
-                extracted_text = self._use_textract(img_path)
-            else:
-                extracted_text = self._use_tesseract(img_path)
-
+            response, extracted_text = self._use_textract(img_path)
         except Exception as e:
             print(f"Error processing {img_path}: {e}")
 
-        return extracted_text
+        return response, extracted_text
 
     def extract_text_from_pdf(self, pdf_path):
         extracted_text = ""

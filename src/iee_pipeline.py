@@ -36,8 +36,9 @@ class IEEPipeline:
         return output_file
 
     def extract_text(self, img_path):
-        output_text = self.text_extractor.extract_text_from_image(img_path)
-        return output_text
+        response, output_text = self.text_extractor.extract_text_from_image(
+            img_path)
+        return response, output_text
 
     def text_preprocessing(self, text):
         cleaned_text = self.text_preprocessor.text_clean(text)
@@ -51,7 +52,7 @@ class IEEPipeline:
         json_data = self.entity_extractor.extract_entities_spacy_tr(text)
         return json_data
 
-    def extract_table_items(self, img_path):
+    def extract_table_items(self, img_path, ocr_data):
         result = self.table_extractor.extract_item_table_from_image(
-            img_path)
+            img_path, ocr_data)
         return result

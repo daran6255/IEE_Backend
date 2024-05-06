@@ -7,7 +7,7 @@ import easyocr
 import numpy as np
 
 from data_processor import DataProcessor
-from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects
+from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects, convert_to_pixels
 
 NOT_IDENTIFIED_VALUE = "N/A"
 
@@ -54,21 +54,58 @@ class TableExtractor:
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-    def _apply_ocr(self, image, cell_coordinates):
+    def _is_text_in_cell(self, text, cell):
+        # Calculate the area of the intersection
+        x_overlap = max(0, min(text['Right'], cell['Right']
+                               ) - max(text['Left'], cell['Left']))
+        y_overlap = max(
+            0, min(text['Bottom'], cell['Bottom']) - max(text['Top'], cell['Top']))
+        intersection_area = x_overlap * y_overlap
+
+        text_area = (text['Right'] - text['Left']) * \
+            (text['Bottom'] - text['Top'])
+
+        # Check if more than half of the text is in the cell
+        return intersection_area >= 0.5 * text_area
+
+    def _map_table_cell_and_text(self, image_size, cell_data, ocr_data):
         data = dict()
         max_num_columns = 0
+        img_w, img_h = image_size
 
-        for idx, row in enumerate(cell_coordinates):
+        for idx, row in enumerate(cell_data):
             row_text = []
             for cell in row["cells"]:
-                cell_image = np.array(image.crop(cell["cell"]))
-                result = self._reader.readtext(np.array(cell_image))
+                result = ''
+                for block in ocr_data['Blocks']:
+                    if block['BlockType'] == 'LINE':
+                        text_coords = {
+                            'Left': block['Geometry']['BoundingBox']['Left'],
+                            'Top': block['Geometry']['BoundingBox']['Top'],
+                            'Width': block['Geometry']['BoundingBox']['Width'],
+                            'Height': block['Geometry']['BoundingBox']['Height']
+                        }
 
-                if len(result) > 0:
-                    text = " ".join([x[1] for x in result])
-                    row_text.append(text)
-                else:
+                        text_coords = convert_to_pixels(
+                            text_coords, img_w, img_h)
+
+                        cell_coords = {
+                            'Left': cell['cell'][0],
+                            'Top': cell['cell'][1],
+                            'Right': cell['cell'][2],
+                            'Bottom': cell['cell'][3]
+                        }
+
+                        if self._is_text_in_cell(text_coords, cell_coords):
+                            result = result + ' ' + block['Text']
+
+                        # Optimization - Break if table cell coordinate maxes text coordinates
+                        # break
+
+                if result == '':
                     row_text.append(NOT_IDENTIFIED_VALUE)
+                else:
+                    row_text.append(result)
 
             if len(row_text) > max_num_columns:
                 max_num_columns = len(row_text)
@@ -80,7 +117,8 @@ class TableExtractor:
             for row, row_data in data.copy().items():
                 if len(row_data) != max_num_columns:
                     row_data = row_data + \
-                        ["" for _ in range(max_num_columns - len(row_data))]
+                        ["" for _ in range(
+                            max_num_columns - len(row_data))]
                     data[row] = row_data
 
         # Remove empty row and columns
@@ -89,10 +127,10 @@ class TableExtractor:
         num_cols = len(next(iter(data.values())))
         data = {key: [row_data[i] for i in range(num_cols) if not all(
             data[j][i] == NOT_IDENTIFIED_VALUE for j in data)] for key, row_data in data.items()}
-
+        print(data)
         return data
 
-    def extract_item_table_from_image(self, img_path):
+    def extract_item_table_from_image(self, img_path, ocr_data):
         result = []
 
         try:
@@ -126,11 +164,12 @@ class TableExtractor:
             structure_id2label[len(structure_id2label)] = "no object"
 
             cells = outputs_to_objects(
-                outputs, cropped_table.size, structure_id2label)
+                outputs, cropped_table.size, structure_id2label, tables_crops[0]['origin'])
 
             # Apply OCR
             cell_coordinates = get_cell_coordinates_by_row(cells)
-            data = self._apply_ocr(cropped_table, cell_coordinates)
+            data = self._map_table_cell_and_text(
+                image.size, cell_coordinates, ocr_data)
 
             for _, row_data in data.items():
                 result.append(row_data)

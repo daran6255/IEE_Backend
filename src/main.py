@@ -430,14 +430,14 @@ def process_invoice():
                         if file_ext == ".jpg" or file_ext == ".jpeg":
                             pp_output_path = iee_pipeline.image_preprocessing(
                                 input_file)
-                            ocr_output = iee_pipeline.extract_text(
+                            ocr_response, ocr_output = iee_pipeline.extract_text(
                                 pp_output_path)
                             pp_txt_ouput = iee_pipeline.text_preprocessing(
                                 ocr_output)
                             entities_output = iee_pipeline.extract_entities(
                                 pp_txt_ouput)
                             items_output = iee_pipeline.extract_table_items(
-                                input_file)
+                                input_file, ocr_response)
 
                             mapped_headings = iee_pipeline.table_extractor.map_table_columns(
                                 table=items_output, ner_output=entities_output)
