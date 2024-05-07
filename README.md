@@ -34,10 +34,10 @@ DB_PORT = 3306
 CREDITS_VALUE = 2
 CREDITS_PER_PAGE = 5
 
-# AWS Credentials
+# AWS Credentials - Keep the same key name
 AWS_ACCESS_KEY_ID='ABCDEF123456'
-AWS_ACCESS_KEY='fas5446DSF456Ffds456'
-AWS_REGION='us-east-1'
+AWS_SECRET_ACCESS_KEY='fas5446DSF456Ffds456'
+AWS_DEFAULT_REGION='us-east-1'
 ```
 
 Run the setup
