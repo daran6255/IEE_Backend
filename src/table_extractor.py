@@ -6,6 +6,8 @@ import torch
 import easyocr
 import numpy as np
 
+# from PIL import Image, ImageDraw
+
 from data_processor import DataProcessor
 from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects, convert_to_pixels
 
@@ -68,17 +70,19 @@ class TableExtractor:
         # Check if more than half of the text is in the cell
         return intersection_area >= 0.5 * text_area
 
-    def _map_table_cell_and_text(self, image_size, cell_data, ocr_data):
+    def _map_table_cell_and_text(self, image, cell_data, ocr_data):
         data = dict()
         max_num_columns = 0
-        img_w, img_h = image_size
+        img_w, img_h = image.size
+
+        # draw = ImageDraw.Draw(image)
 
         for idx, row in enumerate(cell_data):
             row_text = []
             for cell in row["cells"]:
                 result = ''
                 for block in ocr_data['Blocks']:
-                    if block['BlockType'] == 'LINE':
+                    if block['BlockType'] == 'WORD':
                         text_coords = {
                             'Left': block['Geometry']['BoundingBox']['Left'],
                             'Top': block['Geometry']['BoundingBox']['Top'],
@@ -95,6 +99,12 @@ class TableExtractor:
                             'Right': cell['cell'][2],
                             'Bottom': cell['cell'][3]
                         }
+
+                        # draw.rectangle([(text_coords['Left'], text_coords['Top']),
+                        #                 (text_coords['Right'], text_coords['Bottom'])], outline="red")
+
+                        # draw.rectangle([(cell_coords['Left'], cell_coords['Top']),
+                        #                 (cell_coords['Right'], cell_coords['Bottom'])], outline="red")
 
                         if self._is_text_in_cell(text_coords, cell_coords):
                             result = result + ' ' + block['Text']
@@ -127,6 +137,8 @@ class TableExtractor:
         num_cols = len(next(iter(data.values())))
         data = {key: [row_data[i] for i in range(num_cols) if not all(
             data[j][i] == NOT_IDENTIFIED_VALUE for j in data)] for key, row_data in data.items()}
+
+        # image.save('temp/table_bb.jpg')
 
         return data
 
@@ -169,7 +181,7 @@ class TableExtractor:
             # Apply OCR
             cell_coordinates = get_cell_coordinates_by_row(cells)
             data = self._map_table_cell_and_text(
-                image.size, cell_coordinates, ocr_data)
+                image, cell_coordinates, ocr_data)
 
             for _, row_data in data.items():
                 result.append(row_data)
