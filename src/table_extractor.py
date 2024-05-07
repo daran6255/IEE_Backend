@@ -127,7 +127,7 @@ class TableExtractor:
         num_cols = len(next(iter(data.values())))
         data = {key: [row_data[i] for i in range(num_cols) if not all(
             data[j][i] == NOT_IDENTIFIED_VALUE for j in data)] for key, row_data in data.items()}
-        print(data)
+
         return data
 
     def extract_item_table_from_image(self, img_path, ocr_data):
