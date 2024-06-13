@@ -36,6 +36,18 @@ CREATE TABLE credits (
     FOREIGN KEY (userId) REFERENCES user_info(id)
 );
 
+CREATE TABLE request_info (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId VARCHAR(36) NOT NULL,
+    status TINYINT DEFAULT 0,
+    totalImages INT NOT NULL,
+    imagesUploaded INT DEFAULT 0,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES user_info(id)
+);
+
 CREATE TABLE dashboard_stats (
     lockId INT NOT NULL DEFAULT 1,
     totalCustomers INT DEFAULT 0,

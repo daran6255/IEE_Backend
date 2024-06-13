@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 class RequestQueue(OrderedDict):
     def __init__(self, *args, **kwargs):
         self.size_limit = kwargs.pop("size_limit", None)

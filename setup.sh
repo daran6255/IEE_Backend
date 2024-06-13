@@ -14,7 +14,7 @@ apt-get install mysql-server -y && systemctl start mysql.service
 mysql -e "source db/create_db.sql"
 
 # Install prerequisites
-apt-get install libgl1 tesseract-ocr nginx -y 
+apt-get install libgl1 tesseract-ocr nginx redis supervisor -y 
 pip3 install -r requirements_cpu.txt
 python3 -m spacy download en
 
@@ -22,5 +22,10 @@ python3 -m spacy download en
 mkdir -p models/spacy_tr
 # Manually download spacy transformer models
 
+# setup supervisor
+cp ./supervisord.conf /etc/supervisor/conf.d/iee_backend.conf
+
 # Run server
-pm2 --name iee-backend start src/main.py
+supervisorctl reread
+supervisorctl update
+supervisorctl start all

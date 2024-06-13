@@ -11,6 +11,8 @@ src/.ipynb_checkpoints
 src/json_files
 output
 annotations
+uploads
 
 *.pem
 *.env
+celerybeat*

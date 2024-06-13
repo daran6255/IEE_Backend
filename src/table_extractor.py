@@ -1,15 +1,12 @@
-import fitz
 from PIL import Image
 from transformers import DetrImageProcessor, DetrForObjectDetection, TableTransformerForObjectDetection
 from torchvision import transforms
 import torch
-import easyocr
-import numpy as np
 
 # from PIL import Image, ImageDraw
 
-from data_processor import DataProcessor
-from utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects, convert_to_pixels
+from src.data_processor import DataProcessor
+from src.utility import MaxResize, get_cell_coordinates_by_row, objects_to_crops, outputs_to_objects, convert_to_pixels
 
 NOT_IDENTIFIED_VALUE = "N/A"
 
@@ -24,37 +21,35 @@ column_keywords = {
 
 
 class TableExtractor:
-    _data_processor = DataProcessor(keywords=column_keywords)
-    _detr_model = DetrForObjectDetection.from_pretrained(
-        "Dilipan/detr-finetuned-invoice", id2label={0: "ItemTable"}, ignore_mismatched_sizes=True)
-    _processor = DetrImageProcessor.from_pretrained(
-        "Dilipan/detr-finetuned-invoice")
-    _structure_model = TableTransformerForObjectDetection.from_pretrained(
-        "microsoft/table-structure-recognition-v1.1-all")
-    _reader = easyocr.Reader(['en'])
-
     _detection_class_thresholds = {
         "ItemTable": 0.8,
         "no object": 10
     }
+    _detection_transform = transforms.Compose([
+        MaxResize(800),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    _structure_transform = transforms.Compose([
+        MaxResize(1000),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
 
     def __init__(self):
+        self._data_processor = DataProcessor(keywords=column_keywords)
+        self._detr_model = DetrForObjectDetection.from_pretrained(
+            "Dilipan/detr-finetuned-invoice", id2label={0: "ItemTable"}, ignore_mismatched_sizes=True)
+        self._processor = DetrImageProcessor.from_pretrained(
+            "Dilipan/detr-finetuned-invoice")
+        self._structure_model = TableTransformerForObjectDetection.from_pretrained(
+            "microsoft/table-structure-recognition-v1.1-all")
+
         self._device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
+
         self._detr_model.to(self._device)
         self._structure_model.to(self._device)
-
-        self.detection_transform = transforms.Compose([
-            MaxResize(800),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-
-        self.structure_transform = transforms.Compose([
-            MaxResize(1000),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
 
     def _is_text_in_cell(self, text, cell):
         # Calculate the area of the intersection
@@ -149,7 +144,7 @@ class TableExtractor:
             tokens = []
             image = Image.open(img_path)
 
-            pixel_values = self.detection_transform(image).unsqueeze(0)
+            pixel_values = self._detection_transform(image).unsqueeze(0)
             pixel_values = pixel_values.to(self._device)
 
             # Item Table detection
@@ -167,7 +162,8 @@ class TableExtractor:
             cropped_table = tables_crops[0]['image'].convert("RGB")
 
             # Item table structure recognition
-            pixel_values = self.structure_transform(cropped_table).unsqueeze(0)
+            pixel_values = self._structure_transform(
+                cropped_table).unsqueeze(0)
             pixel_values = pixel_values.to(self._device)
             with torch.no_grad():
                 outputs = self._structure_model(pixel_values)

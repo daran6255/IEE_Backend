@@ -1,43 +1,42 @@
-import os
 import cv2
 
-from image_enhancer import ImageEnhancer
-from text_extractor import TextExtractor
-from entity_extractor import extractEntities
-from text_preprocessor import TextPreprocessor
-from table_extractor import TableExtractor
+from src.image_enhancer import ImageEnhancer
+from src.text_extractor import TextExtractor
+from src.entity_extractor import ExtractEntities
+from src.text_preprocessor import TextPreprocessor
+from src.table_extractor import TableExtractor
 
 models_dir = r'models'
 
 
 class IEEPipeline:
-    image_enhancer = ImageEnhancer()
-    text_extractor = TextExtractor()
-    text_preprocessor = TextPreprocessor()
-    entity_extractor = extractEntities(models_dir)
-    table_extractor = TableExtractor()
 
     def __init__(self):
-        pass
+        self.image_enhancer = ImageEnhancer()
+        self.text_extractor = TextExtractor()
+        self.text_preprocessor = TextPreprocessor()
+        self.entity_extractor = ExtractEntities(models_dir)
+        self.table_extractor = TableExtractor()
 
     def image_preprocessing(self, img_path):
-        output_file = None
+        # output_file = None
+        processed_image = None
         image = cv2.imread(img_path)
 
         if image is not None:
             processed_image = self.image_enhancer.grayscale_conversion(image)
 
-            base_name, extension = os.path.splitext(os.path.basename(img_path))
-            output_file = os.path.join(os.path.dirname(
-                img_path), f"{base_name}_ipp{extension}")
+            # base_name, extension = os.path.splitext(os.path.basename(img_path))
+            # output_file = os.path.join(os.path.dirname(
+            #     img_path), f"{base_name}_ipp{extension}")
 
-            cv2.imwrite(output_file, processed_image)
+            # cv2.imwrite(output_file, processed_image)
 
-        return output_file
+        return processed_image
 
-    def extract_text(self, img_path):
+    def extract_text(self, image):
         response, output_text = self.text_extractor.extract_text_from_image(
-            img_path)
+            image)
         return response, output_text
 
     def text_preprocessing(self, text):
