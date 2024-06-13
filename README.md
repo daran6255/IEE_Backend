@@ -17,6 +17,7 @@ ENV='prod/dev'
 PLATFORM='win/linux'
 SECRET_KEY='some-key'
 HOST='http://127.0.0.1:3000'
+UPLOAD_DIR='uploads'
 
 # smtp variables
 EMAIL_DOMAIN='smtp.<domaon>.com'
@@ -38,6 +39,10 @@ CREDITS_PER_PAGE = 5
 AWS_ACCESS_KEY_ID='ABCDEF123456'
 AWS_SECRET_ACCESS_KEY='fas5446DSF456Ffds456'
 AWS_DEFAULT_REGION='us-east-1'
+
+# Celery variables
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 ```
 
 Run the setup
