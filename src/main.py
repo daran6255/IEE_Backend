@@ -30,6 +30,9 @@ upload_dir = os.getenv("UPLOAD_DIR")
 app = Flask(__name__, static_folder=os.path.abspath(upload_dir))
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+# app.config['JWT_CSRF_CHECK_FORM'] = True
 app.config.update(
     broker_url=os.getenv("CELERY_RESULT_BACKEND"),
     result_backend=os.getenv("CELERY_BROKER_URL"),
@@ -67,9 +70,9 @@ def login():
     }
 
     if request.method == "POST":
-        response = request.get_json()
-        email = response["email"]
-        password = response["password"]
+        req = request.get_json()
+        email = req["email"]
+        password = req["password"]
 
         cnx = None
         cursor = None
@@ -91,11 +94,11 @@ def login():
                         "result": "Email verification not done",
                     }
                 elif sha256_crypt.verify(password, stored_password):
-                    expires = timedelta(days=1)
+                    expires = timedelta(days=10)
                     access_token = create_access_token(
                         identity=email, expires_delta=expires
                     )
-                    result = {
+                    response = make_response({
                         "status": "success",
                         "result": {
                             "id": id,
@@ -104,9 +107,11 @@ def login():
                             "company": company,
                             "email": email,
                             "phone": phone,
-                            "accessToken": access_token,
                         },
-                    }
+                    })
+                    response.set_cookie(
+                        'access_token_cookie', access_token, httponly=True, samesite='Strict')
+                    return response
                 else:
                     result = {"status": "error",
                               "result": "Invalid email or password"}
@@ -125,6 +130,51 @@ def login():
                 cnx.close()
 
     return jsonify(result)
+
+
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    response = make_response(jsonify({"msg": "logout successful"}))
+    response.delete_cookie('access_token_cookie')
+    return response
+
+
+@app.route('/verify-token', methods=['GET'])
+@jwt_required()
+def verify_token():
+    current_user = get_jwt_identity()
+
+    if current_user is None:
+        return jsonify({"status": "error", "result": "User not authorized"})
+
+    cnx = None
+    cursor = None
+
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        query = "SELECT id, name, role, company, email, phone, verified FROM user_info WHERE email = %s"
+        cursor.execute(query, (current_user,))
+        user = cursor.fetchone()
+        cnx.commit()
+
+        if user is not None:
+            id, name, role, company, email, phone, verified = user
+
+            if not verified:
+                return jsonify({"status": "error", "result": "User not verified"}), 404
+            else:
+                return jsonify({"result": {"id": id, "name": name, "role": role, "company": company, "email": email, "phone": phone}})
+        else:
+            return jsonify({"status": "error", "result": "User not found"}), 404
+    except mysql.connector.Error as err:
+        print(err)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if cnx is not None:
+            cnx.close()
 
 
 @app.route("/register", methods=["POST"])
