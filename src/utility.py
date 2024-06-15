@@ -1,8 +1,10 @@
 import os
 import torch
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from dataclasses import dataclass
+from pathlib import Path
+from jinja2 import Template
+
+import emails
 
 
 class InvoiceStatus:
@@ -155,27 +157,83 @@ def get_cell_coordinates_by_row(table_data):
     return cell_coordinates
 
 
-def send_email(user_email, token):
-    host_url = os.getenv("HOST")
+@dataclass
+class EmailData:
+    html_content: str
+    subject: str
+
+
+def render_email_template(*, template_name: str, context: dict[str]) -> str:
+    template_str = (
+        Path(__file__).parent / "email-templates" / template_name
+    ).read_text()
+    html_content = Template(template_str).render(context)
+    return html_content
+
+
+def send_email(
+    *,
+    email_to: str,
+    subject: str = "",
+    html_content: str = ""
+) -> None:
     email_domain = os.getenv("EMAIL_DOMAIN")
     email_address = os.getenv("EMAIL_ADDRESS")
     email_password = os.getenv("EMAIL_PASSWORD")
 
-    smtplibObj = smtplib.SMTP(email_domain, 587)
-    smtplibObj.starttls()
-    smtplibObj.login(email_address, email_password)
+    # Create the email message
+    message = emails.Message(
+        subject=subject,
+        html=html_content,
+        mail_from=("Invoice Entities Extraction", email_address)
+    )
 
-    msg = MIMEMultipart()
-    msg["From"] = email_address
-    msg["To"] = user_email
-    msg["Subject"] = "IEE Email Confirmation"
-    body = f"Please confirm your email by clicking on the following link: {host_url}/verify-email/{token}"
-    msg.attach(MIMEText(body, "plain"))
+    # SMTP options using environment variables
+    smtp_options = {
+        "host": email_domain,
+        "port": 587,
+        "tls": True,
+        "user": email_address,
+        "password": email_password
+    }
 
-    smtplibObj.send_message(msg)
-    del msg
+    try:
+        message.send(to=email_to, smtp=smtp_options)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-    smtplibObj.quit()
+
+def generate_user_verified_email(email_to: str, user_name: str, token: str) -> EmailData:
+    host_url = os.getenv("HOST")
+    subject = "IEE Email Verification"
+    link = f"{host_url}/verify-email/{token}"
+    html_content = render_email_template(
+        template_name="user_verification.html",
+        context={
+            "user_name": user_name,
+            "verification_link": link,
+            "email": email_to,
+        },
+    )
+
+    return EmailData(html_content=html_content, subject=subject)
+
+
+def generate_request_processed_email(email_to: str, user_name: str, process_id: str) -> EmailData:
+    host_url = os.getenv("HOST")
+    project_name = str("IEE")
+    subject = f"{project_name} - Invoice Request Processed - {process_id}"
+    app_link = f"{host_url}/result-view/{process_id}"
+    html_content = render_email_template(
+        template_name="process_status.html",
+        context={
+            "user_name": user_name,
+            "process_id": process_id,
+            "app_link": app_link,
+            "email": email_to,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
 
 
 def convert_to_pixels(box, image_width, image_height):

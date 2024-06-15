@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New User Registration Notification</title>
+    <title>New User Registration</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -87,9 +87,6 @@
             border-radius: 5px;
             font-size: 16px;
         }
-        .confirm-button a {
-            color: #ffffff;
-        }
 
         .needhelp {
             line-height: 0.5;
@@ -116,10 +113,11 @@
             <h1>Please Confirm Your Email</h1>
         </div>
         <div class="content">
-            <p>Hi</p>
-            <p>You have registered in Invoice Entity Extractor. Please confirm your email to verify by clicking the button
+            <p>Hi {{user_name}}</p>
+            <p>You have registered in Invoice Entity Extractor. Please confirm your email to verify by clicking the
+                button
                 below:</p>
-            <a href="{{verification_link}}" class="confirm-button">Verify Email</a>
+            <a style="color: #ffffff;" href="{{verification_link}}" class="confirm-button">Verify Email</a>
             <br>
             <br>
             <div class="needhelp">

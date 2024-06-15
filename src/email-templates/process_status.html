@@ -47,6 +47,7 @@
             font-size: 18px;
             color: #333;
         }
+
         .confirm-button {
             display: block;
             width: 150px;
@@ -59,6 +60,7 @@
             border-radius: 5px;
             font-size: 16px;
         }
+
         .needhelp {
             line-height: 0.5;
         }
@@ -85,11 +87,12 @@
         <div class="content">
             <p class="greetingtext">Hi {{user_name}} !!</p>
             <img src="https://img.icons8.com/color/96/000000/checked--v1.png" alt="Green Tick" class="icon">
-            <p class="confirm-message">Your file process request is completed</p>
-            <p class="needhelp">click below button to view </p>
-            <a href="{{view_link}}" class="confirm-button">View</a>
+            <p class="confirm-message">Your invoice processing request has been completed. Process Id - {{process_id}}
+            </p>
+            <p class="needhelp">click below button to view results</p>
+            <a style="color: #ffffff;" href="{{app_link}}" class="confirm-button">Open</a>
             <p class="needhelp">or view by using the link below:</p>
-            <p class="needhelp"><a href="{{view_link}}">{{view_link}}</a></p>
+            <p class="needhelp"><a href="{{app_link}}">{{app_link}}</a></p>
             <br>
         </div>
         <div class="footer">

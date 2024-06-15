@@ -102,7 +102,8 @@ class TableExtractor:
                         #                 (cell_coords['Right'], cell_coords['Bottom'])], outline="red")
 
                         if self._is_text_in_cell(text_coords, cell_coords):
-                            result = result + ' ' + block['Text']
+                            result += ' ' + \
+                                block['Text'] if result else block['Text']
 
                         # Optimization - Break if table cell coordinate maxes text coordinates
                         # break

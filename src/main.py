@@ -6,7 +6,7 @@ import time
 import shutil
 import pandas as pd
 from passlib.hash import sha256_crypt
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, send_from_directory, make_response
 from flask_cors import CORS
 import mysql.connector
 from datetime import timedelta, datetime
@@ -20,12 +20,14 @@ from flask_jwt_extended import (
 
 from src.db import cnxpool
 from src.iee_pipeline import IEEPipeline
-from src.utility import InvoiceStatus, send_email
+from src.utility import InvoiceStatus, send_email, generate_user_verified_email
 from src.celery_config import process_request
 
 # template_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-app = Flask(__name__)
+upload_dir = os.getenv("UPLOAD_DIR")
+
+app = Flask(__name__, static_folder=os.path.abspath(upload_dir))
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config.update(
@@ -43,7 +45,6 @@ serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 credits_per_page = int(os.getenv("CREDITS_PER_PAGE"))
 credits_value = int(os.getenv("CREDITS_VALUE"))
 assets_url = os.getenv("HOST")
-upload_dir = os.getenv("UPLOAD_DIR")
 
 
 with open(tags_file, "r") as f:
@@ -177,7 +178,13 @@ def register():
                 )
                 cnx.commit()
 
-                send_email(email, verification_code)
+                email_data = generate_user_verified_email(
+                    email_to=email, user_name=name, token=verification_code)
+                send_email(
+                    email_to=email,
+                    subject=email_data.subject,
+                    html_content=email_data.html_content,
+                )
 
                 result = {
                     "status": "success",
@@ -776,7 +783,7 @@ def get_request_history():
     try:
         cnx = cnxpool.get_connection()
         cursor = cnx.cursor()
-        query = "SELECT id, status, totalImages, createdAt, processedAt FROM request_info WHERE userId = (SELECT id FROM user_info WHERE email = %s)"
+        query = "SELECT id, status, totalImages, createdAt, processedAt FROM request_info WHERE userId = (SELECT id FROM user_info WHERE email = %s) ORDER BY createdAt DESC"
         cursor.execute(query, (current_user,))
         result = cursor.fetchall()
         cnx.commit()
@@ -825,7 +832,7 @@ def delete_request(request_id):
                 "DELETE FROM request_info WHERE id = %s", (request_id,))
             cnx.commit()
         else:
-            return jsonify({"status": "success", "result": "Invoice Request not found"})
+            return jsonify({"status": "error", "result": "Invoice Request not found"})
 
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -849,15 +856,46 @@ def get_all_image_urls(request_id):
     if current_user is None:
         return jsonify({"status": "error", "result": "User not authorized"})
 
-    base_path = os.path.join(upload_dir, request_id)
-    image_files = sorted(
-        [f for f in os.listdir(base_path) if f.endswith(
-            (".png", ".jpg", ".jpeg"))]
-    )
+    cnx = None
+    cursor = None
 
-    image_urls = [f"/app/images/{request_id}/{image}" for image in image_files]
+    try:
+        cnx = cnxpool.get_connection()
+        cursor = cnx.cursor()
+        query = "SELECT id FROM request_info WHERE id = %s"
+        cursor.execute(query, (request_id,))
+        result = cursor.fetchone()
+        cnx.commit()
 
-    return jsonify({"images": image_urls})
+        if result:
+            base_path = os.path.join(upload_dir, request_id)
+            image_files = sorted(
+                [f for f in os.listdir(base_path) if f.endswith(
+                    (".png", ".jpg", ".jpeg"))]
+            )
+
+            image_urls = [f"{image}" for image in image_files]
+            return jsonify({"files": image_urls})
+        else:
+            return jsonify({"status": "error", "result": "Invoice Request not found"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if cnx is not None:
+            cnx.close()
+
+
+@app.route("/invoice_requests/file/<path:file_name>", methods=["GET"])
+@jwt_required()
+def serve_image(file_name):
+    response = make_response(send_from_directory(
+        app.static_folder, file_name))
+    response.cache_control.max_age = timedelta(days=2).total_seconds()
+    return response
 
 
 @app.route("/invoice_requests/<request_id>/data/<image_name>", methods=["GET"])
@@ -897,7 +935,6 @@ def update_json_by_name(request_id):
 
     json_path = os.path.join(
         base_path, os.path.splitext(image_name)[0] + ".json")
-    print(json_path)
 
     if os.path.exists(json_path):
         with open(json_path, "w") as f:

@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 
 from src.db import dbconfig
-from src.utility import InvoiceStatus
+from src.utility import InvoiceStatus, send_email, generate_request_processed_email
 
 load_dotenv(override=True)
 
@@ -147,7 +147,21 @@ def process_request(request_id, user_id):
                     "UPDATE request_info SET status = %s, processedAt = NOW() WHERE id = %s",
                     (InvoiceStatus.SUCCESS, request_id),
                 )
+                cursor.execute(
+                    "SELECT name, email FROM user_info WHERE id = %s", (user_id,))
+                request = cursor.fetchone()
                 cnx.commit()
+
+                name, email = request
+
+                # Send notification email after successfull processing
+                email_data = generate_request_processed_email(
+                    email_to=email, user_name=name, process_id=request_id)
+                send_email(
+                    email_to=email,
+                    subject=email_data.subject,
+                    html_content=email_data.html_content,
+                )
             except Exception as e:
                 cursor.execute(
                     "UPDATE request_info SET status = %s WHERE id = %s",
