@@ -5,7 +5,6 @@ import shutil
 import requests
 import redis
 import mysql.connector
-from dotenv import load_dotenv
 from flask import Flask
 from celery import Celery
 from celery.schedules import crontab
@@ -15,7 +14,6 @@ from datetime import datetime, timedelta
 from src.db import dbconfig
 from src.utility import InvoiceStatus, send_email, generate_request_processed_email
 
-load_dotenv(override=True)
 
 credits_per_page = int(os.getenv("CREDITS_PER_PAGE"))
 redis_client = redis.Redis.from_url(os.getenv("CELERY_BROKER_URL"))

@@ -47,7 +47,6 @@ tags_file = r"data/tags.json"
 serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 credits_per_page = int(os.getenv("CREDITS_PER_PAGE"))
 credits_value = int(os.getenv("CREDITS_VALUE"))
-assets_url = os.getenv("HOST")
 
 
 with open(tags_file, "r") as f:
