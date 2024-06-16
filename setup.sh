@@ -23,9 +23,14 @@ mkdir -p models/spacy_tr
 # Manually download spacy transformer models
 
 # setup supervisor
-cp ./supervisord.conf /etc/supervisor/conf.d/iee_backend.conf
+# cp ./supervisord.conf /etc/supervisor/conf.d/iee_backend.conf
 
 # Run server
-supervisorctl reread
-supervisorctl update
-supervisorctl start all
+# supervisorctl reread
+# supervisorctl update
+# supervisorctl start all
+
+# Run pm2 (temporary)
+# Give full path of pip to gunicorn and clerey "/home/ubuntu/.local/bin/gunicorn"
+sudo -E pm2 --name iee-backend-new start "gunicorn src.main:app -b localhost:5000"
+sudo -E pm2 --name iee-backend-celery start ./start_celery.sh

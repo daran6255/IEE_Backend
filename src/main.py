@@ -1023,31 +1023,21 @@ def process_invoice():
         # Add missing entities
         result = {
             key: {
-                "value": entities_output.get(key)[0] if entities_output.get(key) else ""
+                "value": entities_output[key][0] if entities_output.get(key) else ""
             }
-            for key in itags
+            for key in other_itags
         }
 
         # Get table items for mapped headings
         if mapped_headings:
-            indices = {
-                tag: (
-                    items_output[0].index(mapped_headings.get(tag))
-                    if mapped_headings.get(tag)
-                    and mapped_headings.get(tag) != "N.E.R.Default"
-                    else None
-                )
-                for tag in items_itags
-            }
-
             mapped_dict = {
                 tag: [
                     (
-                        {"value": items_output[i][indices[tag]]}
-                        if indices[tag] is not None
+                        {"value": items_output[i][mapped_headings[tag]]}
+                        if mapped_headings[tag] is not None
                         else (
                             {"value": entities_output[tag][i - 1]}
-                            if mapped_headings.get(tag) == "N.E.R.Default"
+                            if mapped_headings[tag] == -1
                             else {"value": ""}
                         )
                     )
