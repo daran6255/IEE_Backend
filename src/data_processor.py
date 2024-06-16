@@ -21,12 +21,12 @@ class DataProcessor:
         for key, value in self.result.items():
             if key in ner_output:
                 if value is None:
+                    ner_words_set = set(
+                        word for phrase in ner_output[key] for word in phrase.split())
                     # iterate over each column
                     for idx in range(len(table[0])):
                         column_words_set = set(word for j in range(
                             1, len(table)) for word in table[j][idx].split())
-                        ner_words_set = set(
-                            word for phrase in ner_output[key] for word in phrase.split())
                         intersection = column_words_set.intersection(
                             ner_words_set)
 
@@ -38,8 +38,7 @@ class DataProcessor:
                                 break
 
                 else:
-                    idx = table[0].index(value)
-                    column_values = [row[idx] for row in table[1:]]
+                    column_values = [row[value] for row in table[1:]]
                     if all(val == "N/A" for val in column_values) and len(column_values) == len(ner_output.get(key, [])):
                         # Set -1 for this entity to use NER result if all table values for this column are N/A
                         self.result[key] = -1
@@ -92,12 +91,12 @@ class DataProcessor:
             return
 
         self.result = {}
-        headings = table[0]
 
         # Convert all data to lowercase
         new_keywords = {key: [word.lower() for word in words_list]
                         for key, words_list in self.keywords.items()}
         new_table = [[s.lower() for s in sub_array] for sub_array in table]
+        headings = new_table[0]
 
         final_headings = {re.sub(
             r'[^a-zA-Z0-9\s.]', ' ', item): idx for idx, item in enumerate(headings) if item != "N/A"}
@@ -105,9 +104,9 @@ class DataProcessor:
         self.result = {key: None for key in new_keywords.keys()}
 
         self.apply_keywords_matching(final_headings, new_keywords)
+        self.apply_spell_correct_matching(final_headings, new_keywords)
         if ner_output:
             self.apply_named_entity_recognition(new_table, ner_output)
-        self.apply_spell_correct_matching(final_headings, new_keywords)
         self.apply_fuzzy_matching(final_headings)
 
         return self.result
