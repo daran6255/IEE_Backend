@@ -1023,7 +1023,7 @@ def process_invoice():
         # Add missing entities
         result = {
             key: {
-                "value": entities_output[key][0] if entities_output.get(key) else ""
+                "value": entities_output[key][0].upper() if entities_output.get(key) else ""
             }
             for key in other_itags
         }
